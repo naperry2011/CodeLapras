@@ -1,0 +1,335 @@
+/* =========================
+   UI COMPONENTS
+   ========================= */
+
+/* Badge styling for event labels (e.g., Recurring, Alert) */
+.badge {
+  display: inline-block;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 11px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+/* =========================
+   UI CONTROLS
+   ========================= */
+.pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:4px 8px; border:1px solid var(--border);
+  border-radius:999px;
+  background:linear-gradient(180deg, color-mix(in oklab, var(--bg2) 95%, transparent), var(--bg2));
+}
+.pill input[type="checkbox"]{ margin:0 4px 0 0 }
+
+.btn{
+  appearance:none; border:1px solid var(--border);
+  background:var(--card); color:var(--text);
+  padding:8px 12px; border-radius:var(--radius-sm); cursor:pointer;
+  box-shadow:0 1px 0 var(--shadow) inset, 0 2px 10px var(--shadow);
+  transition:.18s; transform:translateZ(0);
+}
+.btn:hover{ transform:translateY(-1px); box-shadow:0 1px 0 var(--shadow) inset, 0 6px 20px var(--shadow) }
+.btn:focus-visible{ outline:2px solid var(--ring); outline-offset:2px }
+.btn.accent{
+  background:linear-gradient(180deg,
+    color-mix(in oklab, var(--accent) 85%, #fff 10%),
+    color-mix(in oklab, var(--accent) 70%, #000 10%)
+  );
+  color:#04140b; border-color:transparent; text-shadow:0 1px 0 #0002;
+}
+.btn.warn{ border-color:var(--warn); color:var(--warn); background:transparent }
+.btn.danger{ border-color:var(--danger); color:var(--danger); background:transparent }
+.btn.small{ padding:6px 10px; font-size:12px; border-radius:10px }
+
+.toolbar{ display:flex; flex-wrap:wrap; gap:10px }
+
+.field{ display:flex; flex-direction:column; gap:6px; margin:0 }
+.field.inline{ flex-direction:row; align-items:center; gap:8px }
+.field input,.field select,.field textarea{
+  background: linear-gradient(180deg, color-mix(in oklab, var(--card) 95%, transparent), var(--card));
+  border:1px solid var(--border); color:var(--text);
+  padding:8px 10px; border-radius:12px; outline:0; min-width:0;
+  box-shadow:0 1px 0 var(--shadow) inset;
+}
+.field textarea{ min-height:70px; resize:vertical }
+.field :is(input,select,textarea):focus{
+  border-color: color-mix(in oklab, var(--accent) 50%, var(--border));
+  box-shadow:0 0 0 3px color-mix(in oklab, var(--accent) 18%, transparent);
+}
+input[type="checkbox"]{ accent-color:var(--accent) }
+
+/* =========================
+   CARDS
+   ========================= */
+.card{
+  background: linear-gradient(180deg, color-mix(in oklab, var(--card) 85%, transparent), var(--card));
+  border:1px solid color-mix(in oklab, var(--border) 70%, transparent);
+  border-radius:var(--radius); box-shadow:0 14px 36px var(--shadow); overflow:hidden;
+}
+.card h2{
+  margin:0; padding:12px 14px; font-size:15px; font-weight:700;
+  border-bottom:1px solid var(--border);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--bg2) 96%, transparent), transparent);
+  letter-spacing:.2px;
+}
+.card h2::after{
+  content:""; display:block; height:2px; margin-top:8px; width:100%;
+  background:linear-gradient(90deg,#0000, color-mix(in oklab, var(--accent) 60%, transparent) 30%, #0000 70%);
+}
+.card .body{ padding:12px }
+
+/* =========================
+   Reorder / PO lists: scrollable
+   ========================= */
+:root { --po-list-max-h: 280px; } /* tweak to taste */
+
+#reorderList,
+#poList{
+  max-height: var(--po-list-max-h);
+  overflow: auto;
+  padding-right: 6px;           /* room for scrollbar */
+  line-height: 1.35;
+  font-size: 12px;              /* "semi-condensed" */
+  scrollbar-gutter: stable both-edges;
+}
+
+/* override the inline padding the rows use in JS renderers */
+#reorderList > div,
+#poList > div{
+  padding: 2px 0 !important;
+}
+
+/* (optional) subtle scrollbar styling */
+#reorderList::-webkit-scrollbar,
+#poList::-webkit-scrollbar{ width: 10px; }
+#reorderList::-webkit-scrollbar-thumb,
+#poList::-webkit-scrollbar-thumb{
+  background: var(--border);
+  border-radius: 8px;
+}
+
+/* =========================
+   Kits list: compact + scroll
+   ========================= */
+#kitList {
+  max-height: 280px;          /* about 5 kit rows tall */
+  overflow-y: auto;
+  padding-right: 6px;         /* room for scrollbar */
+  line-height: 1.35;
+  font-size: 12px;
+  scrollbar-gutter: stable both-edges;
+}
+
+#kitList > div {
+  padding: 4px 6px;
+  margin: 2px 0;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* Optional: styled scrollbar */
+#kitList::-webkit-scrollbar {
+  width: 10px;
+}
+#kitList::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 8px;
+}
+
+/* =========================
+   OVERVIEW / STATS
+   ========================= */
+.stats-card{ margin:10px 16px 0; padding:12px 14px; border-radius:18px }
+.stats-toolbar{ display:flex; justify-content:flex-end; align-items:center; margin-bottom:4px }
+.seg{ display:inline-grid; grid-auto-flow:column; gap:6px; padding:4px; border-radius:999px; border:1px solid var(--border); background:linear-gradient(180deg, color-mix(in oklab, var(--bg2) 95%, transparent), var(--bg2)) }
+.seg button{ border:0; background:transparent; padding:6px 10px; border-radius:999px; cursor:pointer; color:var(--muted); font-weight:600 }
+.seg button:hover{ color:var(--text) }
+.seg button.active{
+  background:linear-gradient(180deg,
+    color-mix(in oklab, var(--accent) 75%, #fff 8%),
+    color-mix(in oklab, var(--accent) 60%, #000 8%)
+  );
+  color:#04140b;
+}
+.stats-wrap{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; align-items:end }
+.stat{ display:flex; flex-direction:column; gap:2px }
+.stat-label{ font-size:12px; color:var(--muted); letter-spacing:.3px }
+.stat-num{ font-feature-settings:'tnum' 1; font-weight:800; line-height:1; font-size:clamp(28px,5vw,44px) }
+
+/* =========================
+   TABS
+   ========================= */
+.tabs-bar {
+  display: flex;
+  gap: 10px;
+  margin: 10px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tabs-bar a {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  color: var(--muted);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--bg2) 95%, transparent), var(--bg2));
+}
+.tabs-bar a.active {
+  color: var(--text);
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 75%, transparent),
+    color-mix(in oklab, var(--accent-2) 50%, transparent)
+  );
+}
+
+/* =========================
+   CALENDAR
+   ========================= */
+.calendar {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+  .calendar th, .calendar td {
+  /* increase padding and font size for larger calendar cells */
+  padding: 12px;
+  /* increase cell height for a larger calendar */
+  height: 48px;
+  border: 1px solid var(--border);
+  text-align: center;
+  font-size: 1.2em;
+}
+.calendar th {
+  background: color-mix(in oklab, var(--bg2) 90%, transparent);
+  color: var(--muted);
+  font-weight: 600;
+}
+.calendar td {
+  background: color-mix(in oklab, var(--card) 90%, transparent);
+}
+.calendar td.today {
+  background: color-mix(in oklab, var(--accent-2) 30%, var(--card));
+  font-weight: 700;
+}
+
+/* Highlight for selected calendar cell */
+.calendar td.selected {
+  background: color-mix(in oklab, var(--accent) 20%, var(--card));
+  font-weight: 700;
+}
+
+/* === Calendar layout adjustments === */
+/* Base flex container for calendar and side panels */
+.cal-flex {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+/* Left area holds the calendar */
+.cal-left {
+  flex: 2;
+}
+/* Right area holds the upcoming/reminder/detail panels */
+.cal-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+/* When on overview page, stack calendar panels vertically */
+body.overview .cal-flex {
+  flex-direction: column;
+}
+body.overview .cal-right {
+  width: 100%;
+}
+
+/* === Collapsible cards === */
+/* When collapsed, hide all direct children except the header */
+.card.collapsed > *:not(h2) {
+  display: none !important;
+}
+.card.collapsed .btn.collapse-btn {
+  /* optional: style for collapsed state; icon is toggled via script */
+}
+
+/* Make side card headers show a move cursor to indicate drag capability */
+#sideCards .card h2 {
+  cursor: move;
+}
+
+/* Draggable cards: reduce opacity while dragging to indicate movement */
+.card.dragging {
+  opacity: 0.5;
+}
+
+/* Controls for calendar navigation */
+.calendar-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.calendar-controls .cal-label {
+  flex: 1;
+  text-align: center;
+  font-weight: 600;
+}
+
+/* =========================
+   RENTALS SUBTABS
+   ========================= */
+aside[data-view="rentals"] #rentalsSubTabs .subtab {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+aside[data-view="rentals"] #rentalsSubTabs .subtab.active {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 75%, transparent),
+    color-mix(in oklab, var(--accent-2) 50%, transparent)
+  );
+  color: var(--text);
+}
+
+/* =========================
+   SUBTABS (Generic)
+   ========================= */
+.subtabs {
+  display: flex;
+  gap: 10px;
+  margin: 10px 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+.subtab {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  cursor: pointer;
+}
+.subtab.active {
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--accent) 75%, transparent),
+    color-mix(in oklab, var(--accent-2) 50%, transparent)
+  );
+  color: var(--text);
+}
+
+/* =========================
+   UTILITY ELEMENTS
+   ========================= */
+#packHelper{ margin-top:6px }
+#backupBanner{
+  display:none; background:linear-gradient(90deg,#332200,#2a2200);
+  color:#ffe8aa; border-bottom:1px solid #5c4a18; padding:10px 16px;
+  position:sticky; top:48px; z-index:11
+}
+hr{ border:0; border-top:1px solid var(--border) }

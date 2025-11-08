@@ -1,0 +1,17 @@
+/* =========================
+   PRINT STYLES
+   ========================= */
+
+/* Print styling: hide everything except taxes card when printing business or employee summaries */
+@media print {
+  body > *:not(#taxPrint) {
+    display: none !important;
+  }
+  #taxPrint {
+    display: block !important;
+    width: 100% !important;
+  }
+  #taxPrint button {
+    display: none !important;
+  }
+}

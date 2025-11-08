@@ -1,0 +1,19 @@
+/* =========================
+   RESPONSIVE / MEDIA QUERIES
+   ========================= */
+
+/* Tablet and mobile breakpoint */
+@media (max-width:1120px){
+  .grid{ grid-template-columns:1fr }
+  .dlg-grid{ grid-template-columns:1fr }
+  .row{ grid-template-columns:1fr }
+}
+
+/* Mobile stats stacking */
+@media (max-width:860px){
+  .stats-wrap{ grid-template-columns:1fr }
+}
+
+/* Compact mode for dense table display */
+body.compact th, body.compact td{ padding:6px 6px }
+body.compact .photoThumb{ width:36px; height:36px }

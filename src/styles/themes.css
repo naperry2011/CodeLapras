@@ -1,0 +1,73 @@
+/* =========================
+   THEME TOKENS (Dark / Light / High-Contrast)
+   ========================= */
+:root{
+  /* Base (Dark) */
+  --bg:#0b0e12;
+  --bg2:#10151c;
+  --text:#e7ecf2;
+  --muted:#aab4c2;
+  --accent:#18d47b;
+  --accent-2:#4fd8f0;
+  --danger:#ff5e6a;
+  --warn:#ffb020;
+  --card:#0f141b;
+  --border:#233041;
+  --shadow:rgba(0,0,0,.35);
+  --radius:14px;
+  --radius-sm:10px;
+
+  /* Focus / selection / caret */
+  --ring: color-mix(in oklab, var(--accent) 60%, transparent);
+  --caret: var(--accent-2);
+  --sel-bg: color-mix(in oklab, var(--accent-2) 28%, transparent);
+  --sel-fg: #0f1720;
+
+  /* Settings dropdown tokens (popup options) */
+  --opt-text: var(--text);
+  --opt-bg:   var(--bg2);
+  --opt-hover: color-mix(in oklab, var(--accent-2) 18%, var(--bg2));
+  --opt-active: color-mix(in oklab, var(--accent) 24%, var(--bg2));
+  --opt-active-text: #0f1720;
+  --opt-arrow:#aab4c2;
+}
+:root.light{
+  --bg:#f5f8fc;
+  --bg2:#ffffff;
+  --text:#0f1720;
+  --muted:#4a5a6f;
+  --accent:#09e3f3;
+  --accent-2:#35bce6;
+  --danger:#c62828;
+  --warn:#b26a00;
+  --card:#ffffff;
+  --border:#d9e3ef;
+  --shadow:rgba(0,0,0,.12);
+
+  --ring: color-mix(in oklab, var(--accent) 55%, transparent);
+  --caret: var(--accent-2);
+  --sel-bg: color-mix(in oklab, var(--accent) 20%, #ffffff 80%);
+  --sel-fg: #0f1720;
+
+  --opt-text:#0f1720;
+  --opt-bg:#ffffff;
+  --opt-hover: color-mix(in oklab, var(--accent-2) 14%, #ffffff);
+  --opt-active: color-mix(in oklab, var(--accent) 20%, #ffffff);
+  --opt-active-text:#0f1720;
+  --opt-arrow:#6c7a8e;
+}
+/* High-contrast app theme (toggle by adding .hc to <html>) */
+:root.hc{
+  --border:#4aa3ff;
+  --muted:#dfe7f2;
+
+  --ring:#4aa3ff;
+  --sel-bg: rgba(74,163,255,.35);
+  --sel-fg:#00122a;
+
+  --opt-text: var(--text);
+  --opt-bg: color-mix(in oklab, var(--bg2) 92%, white 8%);
+  --opt-hover: color-mix(in oklab, var(--accent-2) 30%, var(--bg2));
+  --opt-active: color-mix(in oklab, var(--accent) 36%, var(--bg2));
+  --opt-active-text:#00122a;
+}
