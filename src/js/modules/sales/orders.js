@@ -450,23 +450,175 @@ function sortOrders(orders, sortBy = 'createdAt', ascending = false) {
   return sorted;
 }
 
+// ============ CRUD Operations ============
+
+/**
+ * Get current order
+ * @returns {object} Current order object
+ */
+function getCurrentOrder() {
+  return window.order || createOrder();
+}
+
+/**
+ * Update current order
+ * @param {object} orderData - Order data to update
+ * @returns {object} { success: boolean, order?: object, errors?: array }
+ */
+function updateCurrentOrderCRUD(orderData) {
+  try {
+    // 1. Merge with existing order
+    const updated = { ...getCurrentOrder(), ...orderData };
+
+    // 2. Recalculate totals
+    const withTotals = recalculateOrderTotals(updated);
+
+    // 3. Validate
+    const validation = validateOrder(withTotals);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    // 4. Update global order
+    window.order = withTotals;
+
+    // 5. Save to storage
+    saveOrderToStorage();
+
+    // 6. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('order:updated', { order: withTotals });
+    }
+
+    // 7. Return success
+    return { success: true, order: withTotals };
+
+  } catch (err) {
+    console.error('Error updating order:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Clear current order
+ * @returns {object} { success: boolean }
+ */
+function clearCurrentOrder() {
+  try {
+    // 1. Reset to empty order
+    window.order = createOrder();
+
+    // 2. Save to storage
+    saveOrderToStorage();
+
+    // 3. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('order:cleared', {});
+    }
+
+    // 4. Return success
+    return { success: true };
+
+  } catch (err) {
+    console.error('Error clearing order:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Convert current order to invoice
+ * @param {object} settings - App settings
+ * @returns {object} { success: boolean, invoice?: object, errors?: array }
+ */
+function convertOrderToInvoiceCRUD(settings = {}) {
+  try {
+    // 1. Get current order
+    const order = getCurrentOrder();
+
+    // 2. Validate order
+    const validation = validateOrder(order);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    // 3. Create invoice from order
+    const invoice = createInvoiceFromOrder(order, settings, window.invoices || []);
+
+    // 4. Add invoice using invoice CRUD (if available)
+    if (typeof createInvoiceCRUD === 'function') {
+      const result = createInvoiceCRUD(invoice, settings);
+      if (!result.success) {
+        return result;
+      }
+
+      // 5. Clear order
+      clearCurrentOrder();
+
+      // 6. Emit event
+      if (typeof EventBus !== 'undefined') {
+        EventBus.emit('order:converted', { invoice: result.invoice });
+      }
+
+      return { success: true, invoice: result.invoice };
+    } else {
+      // Fallback: manual add
+      if (!window.invoices) window.invoices = [];
+      window.invoices.push(invoice);
+      if (typeof saveInvoices === 'function') {
+        saveInvoices(window.invoices);
+      }
+      clearCurrentOrder();
+      return { success: true, invoice };
+    }
+
+  } catch (err) {
+    console.error('Error converting order to invoice:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Save order to storage
+ */
+function saveOrderToStorage() {
+  if (typeof saveCurrentOrder === 'function') {
+    saveCurrentOrder(window.order || {});
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
+  // Factory and validation
   window.createOrder = createOrder;
   window.createLineItem = createLineItem;
   window.validateOrder = validateOrder;
   window.validateLineItem = validateLineItem;
+
+  // Line item management
   window.addLineItem = addLineItem;
   window.removeLineItem = removeLineItem;
   window.updateLineItem = updateLineItem;
   window.updateLineItemQuantity = updateLineItemQuantity;
+
+  // Calculations
   window.calculateSubtotal = calculateSubtotal;
   window.applyDiscount = applyDiscount;
   window.calculateTax = calculateTax;
   window.recalculateOrderTotals = recalculateOrderTotals;
+
+  // Status and validation
   window.updateOrderStatus = updateOrderStatus;
   window.checkStockAvailability = checkStockAvailability;
+
+  // Query helpers
   window.filterOrders = filterOrders;
   window.sortOrders = sortOrders;
+
+  // CRUD operations
+  window.getCurrentOrder = getCurrentOrder;
+  window.updateCurrentOrderCRUD = updateCurrentOrderCRUD;
+  window.clearCurrentOrder = clearCurrentOrder;
+  window.convertOrderToInvoiceCRUD = convertOrderToInvoiceCRUD;
+  window.saveOrderToStorage = saveOrderToStorage;
 }

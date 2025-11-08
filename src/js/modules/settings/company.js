@@ -317,6 +317,54 @@ function formatTaxRate(rate) {
   return `${(rate * 100).toFixed(2)}%`;
 }
 
+// ============ CRUD Operations ============
+
+function getSettings() {
+  if (!window.settings) {
+    window.settings = createSettings();
+  }
+  return window.settings;
+}
+
+function updateSettingsCRUD(updates) {
+  try {
+    const current = getSettings();
+    const updated = { ...current, ...updates, updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString() };
+    const validation = validateSettings(updated);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    window.settings = updated;
+    saveSettingsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('settings:updated', { updates, settings: updated });
+    }
+    return { success: true, settings: updated };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function resetSettingsCRUD() {
+  try {
+    const defaultSettings = createSettings();
+    window.settings = defaultSettings;
+    saveSettingsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('settings:reset', { settings: defaultSettings });
+    }
+    return { success: true, settings: defaultSettings };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function saveSettingsToStorage() {
+  if (typeof saveSettings === 'function') {
+    saveSettings(window.settings || createSettings());
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
@@ -333,4 +381,8 @@ if (typeof window !== 'undefined') {
   window.recordBackup = recordBackup;
   window.formatCurrency = formatCurrency;
   window.formatTaxRate = formatTaxRate;
+  window.getSettings = getSettings;
+  window.updateSettingsCRUD = updateSettingsCRUD;
+  window.resetSettingsCRUD = resetSettingsCRUD;
+  window.saveSettingsToStorage = saveSettingsToStorage;
 }

@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Day 6 (Core Storage Operations)
+- Created **`src/js/core/eventBus.js`** - Pub/sub event system for cross-module communication
+  - Subscribe/unsubscribe with `on()` and `off()`
+  - Emit events with `emit()`
+  - One-time subscriptions with `once()`
+  - Event introspection (getListenerCount, getEventNames, hasListeners)
+  - Error handling for listener callbacks
+- Added CRUD operations to all 9 business model files:
+  - **Products** (6 CRUD functions): `getAllProducts()`, `getProduct()`, `createProductCRUD()`, `updateProductCRUD()`, `deleteProductCRUD()`, `saveProductsToStorage()`
+    - Emits events: `product:created`, `product:updated`, `product:deleted`
+  - **Invoices** (7 CRUD functions): Including special `markInvoicePaidCRUD()` operation
+    - Auto-generates invoice numbers using settings prefix
+    - Emits events: `invoice:created`, `invoice:updated`, `invoice:deleted`, `invoice:paid`
+  - **Orders** (5 CRUD functions): Single current order management
+    - Special operations: `convertOrderToInvoiceCRUD()`, `clearCurrentOrder()`
+    - Emits events: `order:updated`, `order:cleared`, `order:converted`
+  - **Rentals** (7 CRUD functions): Including `markRentalReturnedCRUD()`
+    - Emits events: `rental:created`, `rental:updated`, `rental:deleted`, `rental:returned`
+  - **Subscriptions** (9 CRUD functions): Advanced lifecycle management
+    - Special operations: `processBillingCRUD()`, `pauseSubscriptionCRUD()`, `resumeSubscriptionCRUD()`, `cancelSubscriptionCRUD()`
+    - Emits events: `subscription:created`, `subscription:updated`, `subscription:deleted`, `subscription:billed`, `subscription:paused`, `subscription:resumed`, `subscription:cancelled`
+  - **Shipments** (7 CRUD functions): Including `markShipmentShippedCRUD()` and `markShipmentDeliveredCRUD()`
+    - Emits events: `shipment:created`, `shipment:updated`, `shipment:deleted`, `shipment:shipped`, `shipment:delivered`
+  - **Kits** (5 CRUD functions): Standard CRUD operations
+    - Validates components against product inventory
+    - Emits events: `kit:created`, `kit:updated`, `kit:deleted`
+  - **Settings** (3 CRUD functions): Singleton settings object
+    - Operations: `getSettings()`, `updateSettingsCRUD()`, `resetSettingsCRUD()`
+    - Emits events: `settings:updated`, `settings:reset`
+- CRUD operation patterns:
+  - Consistent error handling with `{ success: boolean, entity?: object, errors?: array }` return format
+  - Validation before save using existing model validation functions
+  - Automatic timestamp updates on modifications
+  - Event emission for cross-module reactivity
+  - Immediate persistence to localStorage via storage layer
+  - Window object exports for global access
+- Total: 49 new CRUD functions across all modules
+- 23 unique event types for cross-module communication
+- All files pass Node.js syntax validation
+- Auto-save mechanism: All CRUD operations automatically persist to localStorage
+
 ### Added - Day 5 (Business Objects & Data Models)
 - Created 9 business model files with complete validation and helper methods:
   - **`src/js/modules/inventory/products.js`** - Product management with 18 functions

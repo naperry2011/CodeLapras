@@ -321,6 +321,77 @@ function sortKits(kits, sortBy = 'name', ascending = true) {
   return sorted;
 }
 
+// ============ CRUD Operations ============
+
+function getAllKits() {
+  return window.kits || [];
+}
+
+function getKit(id) {
+  if (!window.kits) return null;
+  return window.kits.find(k => k.id === id) || null;
+}
+
+function createKitCRUD(kitData) {
+  try {
+    const kit = createKit(kitData);
+    const validation = validateKit(kit, window.data || []);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    if (!window.kits) window.kits = [];
+    window.kits.push(kit);
+    saveKitsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('kit:created', { id: kit.id, kit });
+    }
+    return { success: true, kit };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function updateKitCRUD(id, updates) {
+  try {
+    const kit = getKit(id);
+    if (!kit) return { success: false, errors: ['Kit not found'] };
+    const updated = { ...kit, ...updates, updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString() };
+    const validation = validateKit(updated, window.data || []);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    Object.assign(kit, updated);
+    saveKitsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('kit:updated', { id, updates, kit: updated });
+    }
+    return { success: true, kit: updated };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function deleteKitCRUD(id) {
+  try {
+    const index = window.kits.findIndex(k => k.id === id);
+    if (index === -1) return { success: false, errors: ['Kit not found'] };
+    const deleted = window.kits.splice(index, 1)[0];
+    saveKitsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('kit:deleted', { id, kit: deleted });
+    }
+    return { success: true, kit: deleted };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function saveKitsToStorage() {
+  if (typeof saveKits === 'function') {
+    saveKits(window.kits || []);
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
@@ -336,4 +407,10 @@ if (typeof window !== 'undefined') {
   window.updateKitComponentQty = updateKitComponentQty;
   window.filterKits = filterKits;
   window.sortKits = sortKits;
+  window.getAllKits = getAllKits;
+  window.getKit = getKit;
+  window.createKitCRUD = createKitCRUD;
+  window.updateKitCRUD = updateKitCRUD;
+  window.deleteKitCRUD = deleteKitCRUD;
+  window.saveKitsToStorage = saveKitsToStorage;
 }

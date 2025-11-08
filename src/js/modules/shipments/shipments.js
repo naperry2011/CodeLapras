@@ -303,6 +303,109 @@ function sortShipments(shipments, sortBy = 'createdAt', ascending = false) {
   return sorted;
 }
 
+// ============ CRUD Operations ============
+
+function getAllShipments() {
+  return window.shipments || [];
+}
+
+function getShipment(id) {
+  if (!window.shipments) return null;
+  return window.shipments.find(s => s.id === id) || null;
+}
+
+function createShipmentCRUD(shipmentData) {
+  try {
+    const shipment = createShipment(shipmentData);
+    const validation = validateShipment(shipment);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    if (!window.shipments) window.shipments = [];
+    window.shipments.push(shipment);
+    saveShipmentsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('shipment:created', { id: shipment.id, shipment });
+    }
+    return { success: true, shipment };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function updateShipmentCRUD(id, updates) {
+  try {
+    const shipment = getShipment(id);
+    if (!shipment) return { success: false, errors: ['Shipment not found'] };
+    const updated = { ...shipment, ...updates, updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString() };
+    const validation = validateShipment(updated);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    Object.assign(shipment, updated);
+    saveShipmentsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('shipment:updated', { id, updates, shipment: updated });
+    }
+    return { success: true, shipment: updated };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function deleteShipmentCRUD(id) {
+  try {
+    const index = window.shipments.findIndex(s => s.id === id);
+    if (index === -1) return { success: false, errors: ['Shipment not found'] };
+    const deleted = window.shipments.splice(index, 1)[0];
+    saveShipmentsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('shipment:deleted', { id, shipment: deleted });
+    }
+    return { success: true, shipment: deleted };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function markShipmentShippedCRUD(id, shippedDate = null) {
+  try {
+    const shipment = getShipment(id);
+    if (!shipment) return { success: false, errors: ['Shipment not found'] };
+    const shipped = markShipmentShipped(shipment, shippedDate);
+    Object.assign(shipment, shipped);
+    saveShipmentsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('shipment:shipped', { id, shippedDate: shipped.shippedDate, shipment: shipped });
+    }
+    return { success: true, shipment: shipped };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function markShipmentDeliveredCRUD(id, deliveredDate = null) {
+  try {
+    const shipment = getShipment(id);
+    if (!shipment) return { success: false, errors: ['Shipment not found'] };
+    const delivered = markShipmentDelivered(shipment, deliveredDate);
+    Object.assign(shipment, delivered);
+    saveShipmentsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('shipment:delivered', { id, deliveredDate: delivered.deliveredDate, shipment: delivered });
+    }
+    return { success: true, shipment: delivered };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function saveShipmentsToStorage() {
+  if (typeof saveShipments === 'function') {
+    saveShipments(window.shipments || []);
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
@@ -317,4 +420,12 @@ if (typeof window !== 'undefined') {
   window.getPendingShipments = getPendingShipments;
   window.getInTransitShipments = getInTransitShipments;
   window.sortShipments = sortShipments;
+  window.getAllShipments = getAllShipments;
+  window.getShipment = getShipment;
+  window.createShipmentCRUD = createShipmentCRUD;
+  window.updateShipmentCRUD = updateShipmentCRUD;
+  window.deleteShipmentCRUD = deleteShipmentCRUD;
+  window.markShipmentShippedCRUD = markShipmentShippedCRUD;
+  window.markShipmentDeliveredCRUD = markShipmentDeliveredCRUD;
+  window.saveShipmentsToStorage = saveShipmentsToStorage;
 }

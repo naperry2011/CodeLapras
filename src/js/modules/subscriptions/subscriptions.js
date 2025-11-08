@@ -360,6 +360,141 @@ function sortSubscriptions(subscriptions, sortBy = 'nextPayDate', ascending = tr
   return sorted;
 }
 
+// ============ CRUD Operations ============
+
+function getAllSubscriptions() {
+  return window.subscriptions || [];
+}
+
+function getSubscription(id) {
+  if (!window.subscriptions) return null;
+  return window.subscriptions.find(s => s.id === id) || null;
+}
+
+function createSubscriptionCRUD(subscriptionData) {
+  try {
+    const subscription = createSubscription(subscriptionData);
+    const validation = validateSubscription(subscription);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    if (!window.subscriptions) window.subscriptions = [];
+    window.subscriptions.push(subscription);
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:created', { id: subscription.id, subscription });
+    }
+    return { success: true, subscription };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function updateSubscriptionCRUD(id, updates) {
+  try {
+    const subscription = getSubscription(id);
+    if (!subscription) return { success: false, errors: ['Subscription not found'] };
+    const updated = { ...subscription, ...updates, updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString() };
+    const validation = validateSubscription(updated);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    Object.assign(subscription, updated);
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:updated', { id, updates, subscription: updated });
+    }
+    return { success: true, subscription: updated };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function deleteSubscriptionCRUD(id) {
+  try {
+    const index = window.subscriptions.findIndex(s => s.id === id);
+    if (index === -1) return { success: false, errors: ['Subscription not found'] };
+    const deleted = window.subscriptions.splice(index, 1)[0];
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:deleted', { id, subscription: deleted });
+    }
+    return { success: true, subscription: deleted };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function processBillingCRUD(id, paymentDate = null) {
+  try {
+    const subscription = getSubscription(id);
+    if (!subscription) return { success: false, errors: ['Subscription not found'] };
+    const processed = processBilling(subscription, paymentDate);
+    Object.assign(subscription, processed);
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:billed', { id, paymentDate: processed.prevPayDate, subscription: processed });
+    }
+    return { success: true, subscription: processed };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function pauseSubscriptionCRUD(id) {
+  try {
+    const subscription = getSubscription(id);
+    if (!subscription) return { success: false, errors: ['Subscription not found'] };
+    const paused = pauseSubscription(subscription);
+    Object.assign(subscription, paused);
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:paused', { id, subscription: paused });
+    }
+    return { success: true, subscription: paused };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function resumeSubscriptionCRUD(id) {
+  try {
+    const subscription = getSubscription(id);
+    if (!subscription) return { success: false, errors: ['Subscription not found'] };
+    const resumed = resumeSubscription(subscription);
+    Object.assign(subscription, resumed);
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:resumed', { id, subscription: resumed });
+    }
+    return { success: true, subscription: resumed };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function cancelSubscriptionCRUD(id) {
+  try {
+    const subscription = getSubscription(id);
+    if (!subscription) return { success: false, errors: ['Subscription not found'] };
+    const cancelled = cancelSubscription(subscription);
+    Object.assign(subscription, cancelled);
+    saveSubscriptionsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('subscription:cancelled', { id, subscription: cancelled });
+    }
+    return { success: true, subscription: cancelled };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function saveSubscriptionsToStorage() {
+  if (typeof saveSubscriptions === 'function') {
+    saveSubscriptions(window.subscriptions || []);
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
@@ -377,4 +512,14 @@ if (typeof window !== 'undefined') {
   window.getActiveSubscriptions = getActiveSubscriptions;
   window.getSubscriptionsDueForBilling = getSubscriptionsDueForBilling;
   window.sortSubscriptions = sortSubscriptions;
+  window.getAllSubscriptions = getAllSubscriptions;
+  window.getSubscription = getSubscription;
+  window.createSubscriptionCRUD = createSubscriptionCRUD;
+  window.updateSubscriptionCRUD = updateSubscriptionCRUD;
+  window.deleteSubscriptionCRUD = deleteSubscriptionCRUD;
+  window.processBillingCRUD = processBillingCRUD;
+  window.pauseSubscriptionCRUD = pauseSubscriptionCRUD;
+  window.resumeSubscriptionCRUD = resumeSubscriptionCRUD;
+  window.cancelSubscriptionCRUD = cancelSubscriptionCRUD;
+  window.saveSubscriptionsToStorage = saveSubscriptionsToStorage;
 }

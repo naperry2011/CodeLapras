@@ -388,9 +388,202 @@ function calculateTotalRevenue(invoices, paidOnly = true) {
     .reduce((sum, inv) => sum + (inv.total || 0), 0);
 }
 
+// ============ CRUD Operations ============
+
+/**
+ * Get all invoices
+ * @returns {Array} Invoices array
+ */
+function getAllInvoices() {
+  return window.invoices || [];
+}
+
+/**
+ * Get invoice by ID
+ * @param {string} id - Invoice ID
+ * @returns {object|null} Invoice or null
+ */
+function getInvoice(id) {
+  if (!window.invoices) return null;
+  return window.invoices.find(inv => inv.id === id) || null;
+}
+
+/**
+ * Create and save a new invoice
+ * @param {object} invoiceData - Invoice data
+ * @param {object} settings - App settings (for defaults)
+ * @returns {object} { success: boolean, invoice?: object, errors?: array }
+ */
+function createInvoiceCRUD(invoiceData, settings = {}) {
+  try {
+    // 1. Generate invoice number if not provided
+    if (!invoiceData.number) {
+      const prefix = settings.invPrefix || 'INV';
+      invoiceData.number = generateInvoiceNumber(prefix, window.invoices || []);
+    }
+
+    // 2. Create invoice with factory
+    const invoice = createInvoice(invoiceData);
+
+    // 3. Calculate totals
+    const withTotals = calculateInvoiceTotals(invoice);
+
+    // 4. Validate
+    const validation = validateInvoice(withTotals);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    // 5. Add to array
+    if (!window.invoices) window.invoices = [];
+    window.invoices.push(withTotals);
+
+    // 6. Save to storage
+    saveInvoicesToStorage();
+
+    // 7. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('invoice:created', { id: withTotals.id, invoice: withTotals });
+    }
+
+    // 8. Return success
+    return { success: true, invoice: withTotals };
+
+  } catch (err) {
+    console.error('Error creating invoice:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Update an existing invoice
+ * @param {string} id - Invoice ID
+ * @param {object} updates - Updates to apply
+ * @returns {object} { success: boolean, invoice?: object, errors?: array }
+ */
+function updateInvoiceCRUD(id, updates) {
+  try {
+    // 1. Find invoice
+    const invoice = getInvoice(id);
+    if (!invoice) {
+      return { success: false, errors: ['Invoice not found'] };
+    }
+
+    // 2. Apply updates
+    const updated = { ...invoice, ...updates, updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString() };
+
+    // 3. Recalculate totals
+    const withTotals = calculateInvoiceTotals(updated);
+
+    // 4. Validate
+    const validation = validateInvoice(withTotals);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    // 5. Update in place
+    Object.assign(invoice, withTotals);
+
+    // 6. Save to storage
+    saveInvoicesToStorage();
+
+    // 7. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('invoice:updated', { id, updates, invoice: withTotals });
+    }
+
+    // 8. Return success
+    return { success: true, invoice: withTotals };
+
+  } catch (err) {
+    console.error('Error updating invoice:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Delete an invoice
+ * @param {string} id - Invoice ID
+ * @returns {object} { success: boolean, invoice?: object, errors?: array }
+ */
+function deleteInvoiceCRUD(id) {
+  try {
+    // 1. Find index
+    const index = window.invoices.findIndex(inv => inv.id === id);
+    if (index === -1) {
+      return { success: false, errors: ['Invoice not found'] };
+    }
+
+    // 2. Remove from array
+    const deleted = window.invoices.splice(index, 1)[0];
+
+    // 3. Save to storage
+    saveInvoicesToStorage();
+
+    // 4. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('invoice:deleted', { id, invoice: deleted });
+    }
+
+    // 5. Return success
+    return { success: true, invoice: deleted };
+
+  } catch (err) {
+    console.error('Error deleting invoice:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Mark invoice as paid
+ * @param {string} id - Invoice ID
+ * @param {string} paidDate - Payment date (ISO string)
+ * @returns {object} { success: boolean, invoice?: object, errors?: array }
+ */
+function markInvoicePaidCRUD(id, paidDate = null) {
+  try {
+    // 1. Find invoice
+    const invoice = getInvoice(id);
+    if (!invoice) {
+      return { success: false, errors: ['Invoice not found'] };
+    }
+
+    // 2. Mark as paid
+    const paid = markInvoicePaid(invoice, paidDate);
+
+    // 3. Update in place
+    Object.assign(invoice, paid);
+
+    // 4. Save to storage
+    saveInvoicesToStorage();
+
+    // 5. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('invoice:paid', { id, paidDate: paid.paidDate, invoice: paid });
+    }
+
+    // 6. Return success
+    return { success: true, invoice: paid };
+
+  } catch (err) {
+    console.error('Error marking invoice as paid:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Save invoices to storage
+ */
+function saveInvoicesToStorage() {
+  if (typeof saveInvoices === 'function') {
+    saveInvoices(window.invoices || []);
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
+  // Factory and helper functions
   window.createInvoice = createInvoice;
   window.generateInvoiceNumber = generateInvoiceNumber;
   window.validateInvoice = validateInvoice;
@@ -398,8 +591,19 @@ if (typeof window !== 'undefined') {
   window.createInvoiceFromOrder = createInvoiceFromOrder;
   window.markInvoicePaid = markInvoicePaid;
   window.cancelInvoice = cancelInvoice;
+
+  // Query helpers
   window.filterInvoices = filterInvoices;
   window.sortInvoices = sortInvoices;
   window.getUnpaidInvoices = getUnpaidInvoices;
   window.calculateTotalRevenue = calculateTotalRevenue;
+
+  // CRUD operations
+  window.getAllInvoices = getAllInvoices;
+  window.getInvoice = getInvoice;
+  window.createInvoiceCRUD = createInvoiceCRUD;
+  window.updateInvoiceCRUD = updateInvoiceCRUD;
+  window.deleteInvoiceCRUD = deleteInvoiceCRUD;
+  window.markInvoicePaidCRUD = markInvoicePaidCRUD;
+  window.saveInvoicesToStorage = saveInvoicesToStorage;
 }

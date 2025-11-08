@@ -286,6 +286,93 @@ function sortRentals(rentals, sortBy = 'startDate', ascending = false) {
   return sorted;
 }
 
+// ============ CRUD Operations ============
+
+function getAllRentals() {
+  return window.rentals || [];
+}
+
+function getRental(id) {
+  if (!window.rentals) return null;
+  return window.rentals.find(r => r.id === id) || null;
+}
+
+function createRentalCRUD(rentalData) {
+  try {
+    const rental = createRental(rentalData);
+    const validation = validateRental(rental);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    if (!window.rentals) window.rentals = [];
+    window.rentals.push(rental);
+    saveRentalsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('rental:created', { id: rental.id, rental });
+    }
+    return { success: true, rental };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function updateRentalCRUD(id, updates) {
+  try {
+    const rental = getRental(id);
+    if (!rental) return { success: false, errors: ['Rental not found'] };
+    const updated = { ...rental, ...updates, updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString() };
+    const validation = validateRental(updated);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+    Object.assign(rental, updated);
+    saveRentalsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('rental:updated', { id, updates, rental: updated });
+    }
+    return { success: true, rental: updated };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function deleteRentalCRUD(id) {
+  try {
+    const index = window.rentals.findIndex(r => r.id === id);
+    if (index === -1) return { success: false, errors: ['Rental not found'] };
+    const deleted = window.rentals.splice(index, 1)[0];
+    saveRentalsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('rental:deleted', { id, rental: deleted });
+    }
+    return { success: true, rental: deleted };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function markRentalReturnedCRUD(id, returnDate = null) {
+  try {
+    const rental = getRental(id);
+    if (!rental) return { success: false, errors: ['Rental not found'] };
+    const returned = markRentalReturned(rental, returnDate);
+    Object.assign(rental, returned);
+    saveRentalsToStorage();
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('rental:returned', { id, returnDate: returned.returnDate, rental: returned });
+    }
+    return { success: true, rental: returned };
+  } catch (err) {
+    return { success: false, errors: [err.message] };
+  }
+}
+
+function saveRentalsToStorage() {
+  if (typeof saveRentals === 'function') {
+    saveRentals(window.rentals || []);
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
@@ -299,4 +386,11 @@ if (typeof window !== 'undefined') {
   window.filterRentals = filterRentals;
   window.getOverdueRentals = getOverdueRentals;
   window.sortRentals = sortRentals;
+  window.getAllRentals = getAllRentals;
+  window.getRental = getRental;
+  window.createRentalCRUD = createRentalCRUD;
+  window.updateRentalCRUD = updateRentalCRUD;
+  window.deleteRentalCRUD = deleteRentalCRUD;
+  window.markRentalReturnedCRUD = markRentalReturnedCRUD;
+  window.saveRentalsToStorage = saveRentalsToStorage;
 }

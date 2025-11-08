@@ -431,23 +431,191 @@ function findProductBySku(products, sku) {
   return products.find(p => p.sku === sku) || null;
 }
 
+// ============ CRUD Operations ============
+
+/**
+ * Get all products
+ * @returns {Array} Products array
+ */
+function getAllProducts() {
+  return window.data || [];
+}
+
+/**
+ * Get product by ID
+ * @param {string} id - Product ID
+ * @returns {object|null} Product or null
+ */
+function getProduct(id) {
+  return findProductById(window.data, id);
+}
+
+/**
+ * Create and save a new product
+ * @param {object} productData - Product data
+ * @returns {object} { success: boolean, product?: object, errors?: array }
+ */
+function createProductCRUD(productData) {
+  try {
+    // 1. Create product with factory
+    const product = createProduct(productData);
+
+    // 2. Apply business rules
+    const withRules = applyBusinessRules(product);
+
+    // 3. Validate
+    const validation = validateProduct(withRules);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    // 4. Add to array
+    if (!window.data) window.data = [];
+    window.data.push(withRules);
+
+    // 5. Save to storage
+    saveProductsToStorage();
+
+    // 6. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('product:created', { id: withRules.id, product: withRules });
+    }
+
+    // 7. Return success
+    return { success: true, product: withRules };
+
+  } catch (err) {
+    console.error('Error creating product:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Update an existing product
+ * @param {string} id - Product ID
+ * @param {object} updates - Updates to apply
+ * @returns {object} { success: boolean, product?: object, errors?: array }
+ */
+function updateProductCRUD(id, updates) {
+  try {
+    // 1. Find product
+    const product = findProductById(window.data, id);
+    if (!product) {
+      return { success: false, errors: ['Product not found'] };
+    }
+
+    // 2. Apply updates
+    const updated = {
+      ...product,
+      ...updates,
+      updatedAt: typeof nowISO === 'function' ? nowISO() : new Date().toISOString()
+    };
+
+    // 3. Apply business rules
+    const withRules = applyBusinessRules(updated);
+
+    // 4. Validate
+    const validation = validateProduct(withRules);
+    if (!validation.isValid) {
+      return { success: false, errors: validation.errors };
+    }
+
+    // 5. Update in place
+    Object.assign(product, withRules);
+
+    // 6. Save to storage
+    saveProductsToStorage();
+
+    // 7. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('product:updated', { id, updates, product: withRules });
+    }
+
+    // 8. Return success
+    return { success: true, product: withRules };
+
+  } catch (err) {
+    console.error('Error updating product:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Delete a product
+ * @param {string} id - Product ID
+ * @returns {object} { success: boolean, product?: object, errors?: array }
+ */
+function deleteProductCRUD(id) {
+  try {
+    // 1. Find index
+    const index = window.data.findIndex(p => p.id === id);
+    if (index === -1) {
+      return { success: false, errors: ['Product not found'] };
+    }
+
+    // 2. Remove from array
+    const deleted = window.data.splice(index, 1)[0];
+
+    // 3. Save to storage
+    saveProductsToStorage();
+
+    // 4. Emit event
+    if (typeof EventBus !== 'undefined') {
+      EventBus.emit('product:deleted', { id, product: deleted });
+    }
+
+    // 5. Return success
+    return { success: true, product: deleted };
+
+  } catch (err) {
+    console.error('Error deleting product:', err);
+    return { success: false, errors: [err.message] };
+  }
+}
+
+/**
+ * Save products to storage
+ */
+function saveProductsToStorage() {
+  if (typeof saveProducts === 'function') {
+    saveProducts(window.data || []);
+  }
+}
+
 // ============ Exports (for window object) ============
 
 if (typeof window !== 'undefined') {
+  // Factory and validation functions
   window.createProduct = createProduct;
   window.validateProduct = validateProduct;
   window.applyBusinessRules = applyBusinessRules;
+
+  // Calculation helpers
   window.calculateTotalUnits = calculateTotalUnits;
   window.calculateStockValue = calculateStockValue;
   window.needsReorder = needsReorder;
   window.normalizeUnits = normalizeUnits;
+
+  // Stock management
   window.adjustQuantity = adjustQuantity;
   window.consumeUnits = consumeUnits;
+
+  // Duplication
   window.duplicateProduct = duplicateProduct;
   window.generateUniqueName = generateUniqueName;
   window.generateUniqueSku = generateUniqueSku;
+
+  // Query helpers
   window.filterProducts = filterProducts;
   window.sortProducts = sortProducts;
   window.findProductById = findProductById;
   window.findProductBySku = findProductBySku;
+
+  // CRUD operations
+  window.getAllProducts = getAllProducts;
+  window.getProduct = getProduct;
+  window.createProductCRUD = createProductCRUD;
+  window.updateProductCRUD = updateProductCRUD;
+  window.deleteProductCRUD = deleteProductCRUD;
+  window.saveProductsToStorage = saveProductsToStorage;
 }
