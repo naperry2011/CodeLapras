@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Action & Shortcut System Test - Day 10</title>
+<link rel="stylesheet" href="src/styles/themes.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/tables.css">
+
+<!-- Day 7-9 UI Components -->
+<script src="src/js/core/eventBus.js"></script>
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/notifications.js"></script>
+<script src="src/js/ui/tables.js"></script>
+
+<!-- Day 10 UI Components -->
+<script src="src/js/ui/actions.js"></script>
+<script src="src/js/ui/shortcuts.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+
+<style>
+  body {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .test-section {
+    margin-bottom: 3rem;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .test-section h2 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .demo-data {
+    background: #e7f3ff;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+
+  /* Button states */
+  .btn.loading {
+    position: relative;
+    color: transparent;
+  }
+
+  .btn.loading .spinner {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #fff;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  .btn.success {
+    background: #28a745;
+    border-color: #28a745;
+  }
+
+  .btn.error {
+    background: #dc3545;
+    border-color: #dc3545;
+  }
+
+  @keyframes spin {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  /* Context menu styles */
+  .context-menu {
+    position: fixed;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    padding: 0.5rem 0;
+    min-width: 200px;
+    z-index: 10000;
+  }
+
+  .context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+
+  .context-menu-item:hover:not(.disabled) {
+    background: #f0f0f0;
+  }
+
+  .context-menu-item:focus {
+    background: #e0e0e0;
+    outline: none;
+  }
+
+  .context-menu-item.danger {
+    color: #dc3545;
+  }
+
+  .context-menu-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .context-menu-separator {
+    height: 1px;
+    background: #e0e0e0;
+    margin: 0.5rem 0;
+  }
+
+  .menu-icon {
+    font-size: 1.1rem;
+  }
+
+  .menu-label {
+    flex: 1;
+  }
+
+  .menu-shortcut {
+    font-size: 0.8rem;
+    color: #999;
+  }
+
+  /* Shortcut help modal */
+  .shortcut-help-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10001;
+  }
+
+  .modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .modal-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 8px;
+    max-width: 600px;
+    max-height: 80vh;
+    width: 90%;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .modal-header h2 {
+    margin: 0;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    line-height: 1;
+  }
+
+  .modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    max-height: calc(80vh - 100px);
+  }
+
+  .shortcut-category {
+    margin-bottom: 2rem;
+  }
+
+  .shortcut-category h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #666;
+  }
+
+  .shortcut-table {
+    width: 100%;
+  }
+
+  .shortcut-table td {
+    padding: 0.5rem;
+  }
+
+  .shortcut-key kbd {
+    background: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+
+  .shortcut-desc {
+    color: #666;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: bold;
+  }
+
+  tr:hover {
+    background: #f9f9f9;
+    cursor: context-menu;
+  }
+
+  .status-log {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.9rem;
+  }
+
+  .status-log div {
+    margin: 0.25rem 0;
+  }
+
+  .log-success { color: #28a745; }
+  .log-error { color: #dc3545; }
+  .log-info { color: #007bff; }
+</style>
+</head>
+<body>
+<h1>Day 10: Action & Shortcut System - Integration Test</h1>
+
+<div class="demo-data">
+  <strong>Test Instructions:</strong>
+  <ol>
+    <li>Click buttons to test action execution with loading states</li>
+    <li>Press <kbd>?</kbd> to view all keyboard shortcuts</li>
+    <li>Try shortcuts: <kbd>Ctrl+S</kbd>, <kbd>Ctrl+N</kbd>, <kbd>Ctrl+F</kbd></li>
+    <li>Right-click on table rows to see context menus</li>
+    <li>Test bulk selection with checkboxes</li>
+    <li>Watch the status log for action events</li>
+  </ol>
+</div>
+
+<!-- Test Section 1: Action Registry -->
+<div class="test-section">
+  <h2>Test 1: Action Registry & Button Binding</h2>
+
+  <div class="button-group">
+    <button class="btn accent" id="btnQuickAction">Quick Action</button>
+    <button class="btn" id="btnWithConfirm">Action with Confirm</button>
+    <button class="btn danger" id="btnDangerousAction">Dangerous Action</button>
+    <button class="btn" id="btnAsyncAction">Async Action (2s)</button>
+  </div>
+
+  <div class="button-group">
+    <button class="btn" data-action="test-action" data-id="123">Data Action (ID: 123)</button>
+    <button class="btn" data-action="test-action" data-id="456">Data Action (ID: 456)</button>
+  </div>
+
+  <h3>Status Log:</h3>
+  <div class="status-log" id="statusLog"></div>
+</div>
+
+<!-- Test Section 2: Keyboard Shortcuts -->
+<div class="test-section">
+  <h2>Test 2: Keyboard Shortcuts</h2>
+
+  <p>Try these shortcuts:</p>
+  <ul>
+    <li><kbd>?</kbd> - Show shortcut help modal</li>
+    <li><kbd>Ctrl+S</kbd> (or <kbd>Cmd+S</kbd> on Mac) - Save</li>
+    <li><kbd>Ctrl+N</kbd> - New item</li>
+    <li><kbd>Ctrl+F</kbd> - Focus search</li>
+    <li><kbd>Ctrl+R</kbd> - Refresh</li>
+    <li><kbd>Esc</kbd> - Close modals</li>
+  </ul>
+
+  <input type="text" id="testSearch" placeholder="Test Ctrl+F to focus this field" style="width: 100%; padding: 0.5rem;">
+</div>
+
+<!-- Test Section 3: Context Menus -->
+<div class="test-section">
+  <h2>Test 3: Context Menus (Right-Click on Rows)</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Product Name</th>
+        <th>Price</th>
+        <th>Stock</th>
+      </tr>
+    </thead>
+    <tbody id="productTable">
+      <tr data-id="1" data-name="Laptop">
+        <td>1</td>
+        <td>Laptop X200</td>
+        <td>$999.99</td>
+        <td>15</td>
+      </tr>
+      <tr data-id="2" data-name="Mouse">
+        <td>2</td>
+        <td>Wireless Mouse</td>
+        <td>$29.99</td>
+        <td>45</td>
+      </tr>
+      <tr data-id="3" data-name="Keyboard">
+        <td>3</td>
+        <td>Mechanical Keyboard</td>
+        <td>$89.99</td>
+        <td>23</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p class="muted">Right-click on any row to see the context menu</p>
+</div>
+
+<!-- Test Section 4: Bulk Actions -->
+<div class="test-section">
+  <h2>Test 4: Bulk Selection & Actions</h2>
+
+  <div class="button-group">
+    <label>
+      <input type="checkbox" id="selectAll"> Select All
+    </label>
+    <button class="btn" id="btnBulkAction">Process Selected Items</button>
+    <button class="btn danger" id="btnBulkDelete">Delete Selected Items</button>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 40px;"></th>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="bulkTable">
+      <tr>
+        <td><input type="checkbox" data-id="101"></td>
+        <td>101</td>
+        <td>Item Alpha</td>
+        <td>Active</td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" data-id="102"></td>
+        <td>102</td>
+        <td>Item Beta</td>
+        <td>Active</td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" data-id="103"></td>
+        <td>103</td>
+        <td>Item Gamma</td>
+        <td>Inactive</td>
+      </tr>
+      <tr>
+        <td><input type="checkbox" data-id="104"></td>
+        <td>104</td>
+        <td>Item Delta</td>
+        <td>Active</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p id="selectionCount" class="muted">0 items selected</p>
+</div>
+
+<script>
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
+
+function log(message, type = 'info') {
+  const logDiv = document.getElementById('statusLog');
+  const entry = document.createElement('div');
+  entry.className = `log-${type}`;
+  entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+  logDiv.appendChild(entry);
+  logDiv.scrollTop = logDiv.scrollHeight;
+}
+
+// ============================================================================
+// TEST 1: ACTION REGISTRY
+// ============================================================================
+
+// Register test actions
+ActionRegistry.register('quick-action', {
+  label: 'Quick Action',
+  handler: () => {
+    log('Quick action executed!', 'success');
+  }
+});
+
+ActionRegistry.register('confirm-action', {
+  label: 'Confirmed Action',
+  confirm: 'Are you sure you want to execute this action?',
+  handler: () => {
+    log('Confirmed action executed!', 'success');
+  }
+});
+
+ActionRegistry.register('dangerous-action', {
+  label: 'Dangerous Action',
+  danger: true,
+  confirm: 'This is a dangerous action. Continue?',
+  confirmType: 'default',
+  handler: () => {
+    log('Dangerous action executed!', 'error');
+  }
+});
+
+ActionRegistry.register('async-action', {
+  label: 'Async Action',
+  handler: async () => {
+    log('Async action started...', 'info');
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    log('Async action completed!', 'success');
+  }
+});
+
+ActionRegistry.register('test-action', {
+  label: 'Test Action',
+  handler: (data) => {
+    log(`Test action executed with ID: ${data?.id}`, 'success');
+  }
+});
+
+// Bind buttons
+bindButton('btnQuickAction', 'quick-action');
+bindButton('btnWithConfirm', 'confirm-action');
+bindButton('btnDangerousAction', 'dangerous-action');
+bindButton('btnAsyncAction', 'async-action');
+
+// Bind data-action buttons
+bindActionButtons(document.body);
+
+// ============================================================================
+// TEST 2: KEYBOARD SHORTCUTS
+// ============================================================================
+
+// Custom shortcuts (defaults are already registered in shortcuts.js)
+ShortcutManager.register('Ctrl+Shift+D', {
+  description: 'Test custom shortcut',
+  category: 'Testing',
+  handler: () => {
+    log('Custom shortcut Ctrl+Shift+D triggered!', 'info');
+  }
+});
+
+// Override Ctrl+F to focus our test input
+ShortcutManager.unregister('Ctrl+F');
+ShortcutManager.register('Ctrl+F', {
+  description: 'Focus test search box',
+  category: 'Navigation',
+  handler: () => {
+    const input = document.getElementById('testSearch');
+    if (input) {
+      input.focus();
+      input.select();
+      log('Search box focused via Ctrl+F', 'info');
+    }
+  }
+});
+
+// ============================================================================
+// TEST 3: CONTEXT MENUS
+// ============================================================================
+
+// Register product row actions
+['edit', 'duplicate', 'delete', 'view', 'add-to-order'].forEach(action => {
+  ActionRegistry.register(`${action}-product`, {
+    label: `${action.charAt(0).toUpperCase() + action.slice(1)} Product`,
+    handler: (data) => {
+      log(`${action} product: ${data?.name} (ID: ${data?.id})`, 'success');
+    }
+  });
+});
+
+// Attach context menu to product table
+ContextMenu.attach('productTable', 'tr', 'product-row', (element) => {
+  return {
+    id: element.dataset.id,
+    name: element.dataset.name
+  };
+});
+
+// ============================================================================
+// TEST 4: BULK SELECTION
+// ============================================================================
+
+// Initialize bulk selector
+BulkSelector.init('bulkTable');
+BulkSelector.addSelectAll('bulkTable', 'selectAll');
+
+// Update selection count
+document.getElementById('bulkTable').addEventListener('change', () => {
+  const count = BulkSelector.getCount('bulkTable');
+  document.getElementById('selectionCount').textContent = `${count} item(s) selected`;
+});
+
+// Register bulk actions
+ActionRegistry.register('bulk-process', {
+  label: 'Process Items',
+  bulk: true,
+  handler: async (item) => {
+    // Simulate processing
+    await new Promise(resolve => setTimeout(resolve, 300));
+    log(`Processed item ${item.id}`, 'success');
+    return { id: item.id, processed: true };
+  }
+});
+
+ActionRegistry.register('bulk-delete', {
+  label: 'Delete Items',
+  bulk: true,
+  danger: true,
+  handler: async (item) => {
+    log(`Deleted item ${item.id}`, 'error');
+    return { id: item.id, deleted: true };
+  }
+});
+
+// Bind bulk action buttons
+document.getElementById('btnBulkAction').addEventListener('click', async (e) => {
+  const selected = BulkSelector.getSelected('bulkTable');
+  if (selected.length === 0) {
+    log('No items selected', 'error');
+    return;
+  }
+
+  const items = selected.map(id => ({ id }));
+  await ActionRegistry.executeBulk('bulk-process', items, { button: e.target });
+  BulkSelector.clear('bulkTable');
+  document.getElementById('selectionCount').textContent = '0 items selected';
+});
+
+document.getElementById('btnBulkDelete').addEventListener('click', async (e) => {
+  const selected = BulkSelector.getSelected('bulkTable');
+  if (selected.length === 0) {
+    log('No items selected', 'error');
+    return;
+  }
+
+  const items = selected.map(id => ({ id }));
+  await ActionRegistry.executeBulk('bulk-delete', items, { button: e.target });
+  BulkSelector.clear('bulkTable');
+  document.getElementById('selectionCount').textContent = '0 items selected';
+});
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  log('Action & Shortcut System Test initialized', 'success');
+  log('Press ? to see all keyboard shortcuts', 'info');
+  log('Right-click on product table rows for context menus', 'info');
+
+  console.log('✅ Test page loaded successfully');
+  console.log('📦 Available APIs:');
+  console.log('  - window.ActionRegistry (register, execute, executeBulk)');
+  console.log('  - window.ShortcutManager (register, showHelp)');
+  console.log('  - window.ContextMenu (register, attach, show)');
+  console.log('  - window.BulkSelector (init, getSelected, clear)');
+});
+</script>
+</body>
+</html>
