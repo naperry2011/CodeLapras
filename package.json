@@ -1,0 +1,46 @@
+{
+  "name": "codelapras",
+  "version": "1.0.0",
+  "description": "Comprehensive inventory, sales, and business management system - A powerful offline-first application for managing inventory, invoicing, employee management, rentals, and more",
+  "main": "index.html",
+  "scripts": {
+    "dev": "echo 'Development server not configured yet. Open index.html in a browser.'",
+    "build": "echo 'Build script not configured yet.'",
+    "test": "echo 'Error: no test specified' && exit 1"
+  },
+  "keywords": [
+    "inventory",
+    "stock-management",
+    "invoicing",
+    "business",
+    "pos",
+    "point-of-sale",
+    "rentals",
+    "employee-management",
+    "accounting",
+    "payroll",
+    "shipment-tracking",
+    "subscriptions",
+    "offline-first",
+    "vanilla-js",
+    "localstorage"
+  ],
+  "author": "",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "devDependencies": {},
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "last 2 versions",
+    "not dead",
+    "> 0.2%"
+  ]
+}
