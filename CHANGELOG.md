@@ -7,6 +7,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Day 5 (Business Objects & Data Models)
+- Created 9 business model files with complete validation and helper methods:
+  - **`src/js/modules/inventory/products.js`** - Product management with 18 functions
+    - Factory, validation, business rules application
+    - Stock calculations, normalization, consumption
+    - Duplicate detection with unique name/SKU generation
+    - Query helpers (filter, sort, find by ID/SKU)
+  - **`src/js/modules/customers/customers.js`** - Customer utilities with 14 functions
+    - Customer data management and validation
+    - Email and phone validation
+    - Duplicate detection with Levenshtein distance algorithm
+    - Customer extraction from invoices
+  - **`src/js/modules/sales/orders.js`** - Order management with 15 functions
+    - Line item management (add, remove, update)
+    - Complex total calculations with discounts, tax, shipping
+    - Stock availability checking
+    - Order status management
+  - **`src/js/modules/sales/invoices.js`** - Invoice processing with 11 functions
+    - Auto-generation of invoice numbers (INV-YYYYMMDD-XXXXX format)
+    - Complex calculation order: subtotal → discount → shipping → tax → coupon
+    - Conversion from orders to invoices
+    - Revenue analytics
+  - **`src/js/modules/kits/kits.js`** - Product kits/bundles with 11 functions
+    - Component management
+    - Automated cost calculation from components
+    - Price suggestion with markup
+    - Stock availability checking for kit assembly
+    - Expansion to line items
+  - **`src/js/modules/rentals/rentals.js`** - Equipment rentals with 9 functions
+    - Overdue detection and late fee calculation
+    - Return management and status tracking
+    - Invoice generation from rentals
+  - **`src/js/modules/subscriptions/subscriptions.js`** - Recurring billing with 14 functions
+    - Billing cycle management (weekly, monthly, quarterly, yearly)
+    - Next billing date calculation
+    - Status management (active, paused, cancelled)
+    - MRR (Monthly Recurring Revenue) calculation
+    - Subscription invoice generation
+  - **`src/js/modules/shipments/shipments.js`** - Shipment tracking with 11 functions
+    - Carrier-specific tracking URL generation (UPS, FedEx, USPS, DHL, Amazon)
+    - Automatic carrier detection from tracking number patterns
+    - Status workflow management
+    - Date tracking (shipped, delivered)
+  - **`src/js/modules/settings/company.js`** - Settings management with 12 functions
+    - Company information management
+    - Tax rate and invoice prefix configuration
+    - Theme customization
+    - Backup settings and timestamp recording
+    - Currency formatting with Intl API
+- All models include:
+  - Factory functions for object creation
+  - Comprehensive validation with error messages
+  - Helper methods for calculations and transformations
+  - Query helpers (filter, sort, search)
+  - Window object exports for global access
+- Total: 115+ new functions across all models
+- All files pass syntax validation
+
 ### Added - Day 4 (Storage Abstraction Layer)
 - Created `src/config/constants.js` with application-wide constants
 - Storage key constants and default values for all entities

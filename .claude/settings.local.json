@@ -7,7 +7,11 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nInitial project structure for CodeLapras refactoring\n\n- Created complete modular directory structure\n- Added .gitignore for Node.js projects\n- Created package.json with project metadata\n- Added comprehensive README.md\n- Initialized CHANGELOG.md\n- Created documentation stubs (user-guide, developer-guide, api-reference, architecture)\n- Preserved original CodeLapras__3_.html for reference\n\nDay 1 of 35-day development roadmap completed.\n\n🤖 Generated with Claude Code\nEOF\n)\")",
       "Bash(tree:*)",
       "Bash(git commit:*)",
-      "Bash(node --check:*)"
+      "Bash(node --check:*)",
+      "Bash(for:*)",
+      "Bash(do node --check:*)",
+      "Bash(echo:*)",
+      "Bash(done)"
     ],
     "deny": [],
     "ask": []
