@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Inventory Module Test - Day 11</title>
+<link rel="stylesheet" href="src/styles/themes.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/tables.css">
+<link rel="stylesheet" href="src/styles/forms.css">
+
+<!-- Core -->
+<script src="src/js/core/utils.js"></script>
+<script src="src/js/core/storage.js"></script>
+<script src="src/js/core/eventBus.js"></script>
+
+<!-- UI Components (Day 7-10) -->
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/notifications.js"></script>
+<script src="src/js/ui/forms.js"></script>
+<script src="src/js/ui/tables.js"></script>
+<script src="src/js/ui/search.js"></script>
+<script src="src/js/ui/pagination.js"></script>
+<script src="src/js/ui/filters.js"></script>
+<script src="src/js/ui/actions.js"></script>
+<script src="src/js/ui/shortcuts.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+
+<!-- Inventory Module (Day 11) -->
+<script src="src/js/modules/inventory/products.js"></script>
+<script src="src/js/modules/inventory/stock-levels.js"></script>
+<script src="src/js/modules/inventory/categories.js"></script>
+<script src="src/js/modules/inventory/product-ui.js"></script>
+<script src="src/js/modules/inventory/product-actions.js"></script>
+
+<style>
+  body {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .test-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background: white;
+  }
+
+  .test-section h2 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+  }
+
+  .stat-card {
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    background: #f9f9f9;
+  }
+
+  .stat-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #007bff;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+    flex-wrap: wrap;
+  }
+
+  .category-list {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+  }
+
+  .category-chip {
+    padding: 0.5rem 1rem;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .category-chip:hover {
+    background: #bbdefb;
+  }
+
+  .category-chip.active {
+    background: #2196f3;
+    color: white;
+    border-color: #1976d2;
+  }
+
+  .alert-box {
+    padding: 1rem;
+    border-radius: 4px;
+    margin: 1rem 0;
+  }
+
+  .alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #856404;
+  }
+
+  .alert-success {
+    background: #d4edda;
+    border: 1px solid #28a745;
+    color: #155724;
+  }
+
+  .alert-danger {
+    background: #f8d7da;
+    border: 1px solid #dc3545;
+    color: #721c24;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+  }
+
+  th, td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+  }
+
+  tbody tr:hover {
+    background: #f9f9f9;
+    cursor: pointer;
+  }
+
+  .demo-info {
+    background: #e7f3ff;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .test-log {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    font-family: monospace;
+    font-size: 0.85rem;
+    margin-top: 1rem;
+  }
+
+  .test-log div {
+    margin: 0.25rem 0;
+  }
+
+  .log-success { color: #28a745; }
+  .log-error { color: #dc3545; }
+  .log-info { color: #007bff; }
+</style>
+</head>
+<body>
+<h1>Day 11: Inventory Module - Integration Test</h1>
+
+<div class="demo-info">
+  <strong>Test Instructions:</strong>
+  <ol>
+    <li>Click "Load Demo Products" to populate sample data</li>
+    <li>View stock alerts and category statistics</li>
+    <li>Test product table with sorting and actions</li>
+    <li>Try search functionality</li>
+    <li>Click "New Product" or right-click rows for context menu</li>
+    <li>Test keyboard shortcuts: Ctrl+N (new), ? (help)</li>
+  </ol>
+</div>
+
+<!-- Stock Alerts Section -->
+<div class="test-section">
+  <h2>Stock Alerts & Monitoring</h2>
+  <div id="stockAlerts"></div>
+  <div class="stats-grid" id="stockStats"></div>
+</div>
+
+<!-- Category Statistics Section -->
+<div class="test-section">
+  <h2>Categories & Suppliers</h2>
+  <div class="button-group">
+    <button class="btn" onclick="showAllCategories()">All Categories</button>
+    <button class="btn" onclick="showAllSuppliers()">All Suppliers</button>
+    <button class="btn" onclick="filterByCategory(null)">Clear Filter</button>
+  </div>
+  <div class="category-list" id="categoryList"></div>
+  <div id="categoryStats"></div>
+</div>
+
+<!-- Product Table Section -->
+<div class="test-section">
+  <h2>Product Table</h2>
+
+  <div class="button-group">
+    <button class="btn accent" id="btnLoadDemo">Load Demo Products (20 items)</button>
+    <button class="btn accent" id="btnNewProduct">New Product</button>
+    <button class="btn" onclick="filterLowStock()">Show Low Stock Only</button>
+    <button class="btn" onclick="filterOutOfStock()">Show Out of Stock</button>
+    <button class="btn" onclick="clearFilters()">Show All</button>
+  </div>
+
+  <div class="button-group">
+    <label>
+      Search: <input type="text" id="searchProducts" placeholder="Search by name, SKU, category..." style="width: 300px; padding: 0.5rem;">
+    </label>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead id="productTableHead"></thead>
+      <tbody id="productTableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="productPagination"></div>
+</div>
+
+<!-- Test Log Section -->
+<div class="test-section">
+  <h2>Test Log</h2>
+  <div class="test-log" id="testLog"></div>
+</div>
+
+<!-- Product Dialog (for testing) -->
+<dialog id="dlg" style="max-width: 800px; border-radius: 8px; padding: 0; border: 1px solid #ddd;">
+  <div style="padding: 1.5rem; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center;">
+    <h2 id="dlgTitle" style="margin: 0;">New Product</h2>
+    <button class="btn" id="btnCloseDialog" style="padding: 0.5rem 1rem;">✕ Close</button>
+  </div>
+
+  <div style="padding: 1.5rem;">
+    <input type="hidden" id="id">
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <label><strong>Product Name *</strong></label>
+        <input type="text" id="name" placeholder="Enter product name" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>SKU</strong></label>
+        <input type="text" id="sku" placeholder="Enter SKU" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <label><strong>Category</strong></label>
+        <input type="text" id="category" placeholder="Enter category" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>Supplier</strong></label>
+        <input type="text" id="supplier" placeholder="Enter supplier" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <label><strong>Quantity</strong></label>
+        <input type="number" id="qty" value="0" min="0" step="1" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>Reorder Point</strong></label>
+        <input type="number" id="reorderAt" value="0" min="0" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>Cost</strong></label>
+        <input type="number" id="cost" value="0" min="0" step="0.01" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>Price</strong></label>
+        <input type="number" id="price" value="0" min="0" step="0.01" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+      <div>
+        <label><strong>Package Cost</strong></label>
+        <input type="number" id="packageCost" value="0" min="0" step="0.01" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>Units per Package</strong></label>
+        <input type="number" id="packageQty" value="1" min="1" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+      <div>
+        <label><strong>Loose Units</strong></label>
+        <input type="number" id="unitsLoose" value="0" min="0" step="0.01" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;">
+      </div>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+      <label><strong>Notes</strong></label>
+      <textarea id="notes" rows="3" placeholder="Optional notes" style="width: 100%; padding: 0.5rem; margin-top: 0.25rem;"></textarea>
+    </div>
+
+    <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+      <label><input type="checkbox" id="singleOnly"> Single Only</label>
+      <label><input type="checkbox" id="measurable"> Measurable</label>
+      <label><input type="checkbox" id="forSale" checked> For Sale</label>
+      <label><input type="checkbox" id="restockOnly"> Restock Only</label>
+    </div>
+
+    <div>
+      <label><strong>Unit Label</strong></label>
+      <input type="text" id="unitLabel" placeholder="e.g., ml, oz, pcs" style="width: 200px; padding: 0.5rem; margin-top: 0.25rem;">
+    </div>
+
+    <input type="hidden" id="photoData">
+    <input type="hidden" id="photoUrl">
+    <input type="hidden" id="components">
+  </div>
+
+  <div style="padding: 1rem 1.5rem; border-top: 1px solid #e0e0e0; display: flex; justify-content: flex-end; gap: 1rem;">
+    <button class="btn" id="btnCancelDialog">Cancel</button>
+    <button class="btn accent" id="btnSaveProduct">Save Product</button>
+  </div>
+</dialog>
+
+<script>
+// ============================================================================
+// GLOBAL STATE
+// ============================================================================
+
+let allProducts = [];
+let filteredProducts = [];
+let currentFilter = null;
+
+// ============================================================================
+// LOGGING
+// ============================================================================
+
+function log(message, type = 'info') {
+  const logDiv = document.getElementById('testLog');
+  const entry = document.createElement('div');
+  entry.className = `log-${type}`;
+  entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+  logDiv.appendChild(entry);
+  logDiv.scrollTop = logDiv.scrollHeight;
+  console.log(message);
+}
+
+// ============================================================================
+// DEMO DATA GENERATION
+// ============================================================================
+
+function generateDemoProducts() {
+  const categories = ['Electronics', 'Furniture', 'Clothing', 'Food & Beverage', 'Books', 'Toys', 'Office Supplies', 'Hardware'];
+  const suppliers = ['Acme Corp', 'Global Supplies', 'Best Wholesale', 'Prime Distributors', 'Direct Import Co'];
+
+  const products = [];
+
+  const productNames = [
+    'Laptop Computer', 'Wireless Mouse', 'Mechanical Keyboard', 'Office Chair',
+    'Standing Desk', 'LED Monitor', 'USB Cable', 'Notebook Set',
+    'Ballpoint Pens', 'Stapler', 'Desk Lamp', 'Filing Cabinet',
+    'Whiteboard', 'Marker Set', 'Coffee Mug', 'Water Bottle',
+    'Smartphone Case', 'Headphones', 'Power Bank', 'Webcam'
+  ];
+
+  productNames.forEach((name, i) => {
+    const category = categories[Math.floor(Math.random() * categories.length)];
+    const supplier = suppliers[Math.floor(Math.random() * suppliers.length)];
+    const cost = Math.round(Math.random() * 200 * 100) / 100;
+    const price = Math.round(cost * (1.3 + Math.random() * 0.7) * 100) / 100;
+    const qty = Math.floor(Math.random() * 50);
+    const reorderAt = Math.floor(Math.random() * 15) + 5;
+
+    products.push({
+      id: `prod-${i + 1}`,
+      name,
+      sku: `SKU-${String(i + 1).padStart(4, '0')}`,
+      category,
+      supplier,
+      qty,
+      reorderAt,
+      cost,
+      price,
+      packageCost: cost,
+      packageQty: 1,
+      unitsLoose: 0,
+      singleOnly: false,
+      measurable: false,
+      forSale: true,
+      restockOnly: false,
+      unitLabel: 'pcs',
+      notes: `Demo product ${i + 1}`,
+      components: '',
+      photo: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
+  });
+
+  return products;
+}
+
+// ============================================================================
+// STOCK ALERTS
+// ============================================================================
+
+function renderStockAlerts() {
+  if (!window.StockLevels) {
+    log('StockLevels module not loaded', 'error');
+    return;
+  }
+
+  const summary = window.StockLevels.getStockAlertSummary(allProducts);
+  const message = window.StockLevels.getStockAlertMessage(allProducts);
+  const hasAlerts = window.StockLevels.hasStockAlerts(allProducts);
+
+  const alertDiv = document.getElementById('stockAlerts');
+  const alertClass = hasAlerts ? 'alert-warning' : 'alert-success';
+  alertDiv.innerHTML = `<div class="${alertClass}">${message}</div>`;
+
+  const statsDiv = document.getElementById('stockStats');
+  statsDiv.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${summary.total}</div>
+      <div class="stat-label">Total Products</div>
+    </div>
+    <div class="stat-card" style="border-color: #dc3545;">
+      <div class="stat-value" style="color: #dc3545;">${summary.outOfStock}</div>
+      <div class="stat-label">Out of Stock</div>
+    </div>
+    <div class="stat-card" style="border-color: #ffc107;">
+      <div class="stat-value" style="color: #ffc107;">${summary.critical}</div>
+      <div class="stat-label">Critical</div>
+    </div>
+    <div class="stat-card" style="border-color: #ff9800;">
+      <div class="stat-value" style="color: #ff9800;">${summary.low}</div>
+      <div class="stat-label">Low Stock</div>
+    </div>
+    <div class="stat-card" style="border-color: #4caf50;">
+      <div class="stat-value" style="color: #4caf50;">${summary.adequate + summary.good}</div>
+      <div class="stat-label">Well Stocked</div>
+    </div>
+  `;
+
+  log(`Stock alerts rendered: ${hasAlerts ? 'Alerts present' : 'All good'}`, hasAlerts ? 'error' : 'success');
+}
+
+// ============================================================================
+// CATEGORIES
+// ============================================================================
+
+function showAllCategories() {
+  if (!window.Categories) {
+    log('Categories module not loaded', 'error');
+    return;
+  }
+
+  const categories = window.Categories.getAllCategories(allProducts);
+  const counts = window.Categories.getCategoryCounts(allProducts);
+
+  const listDiv = document.getElementById('categoryList');
+  listDiv.innerHTML = categories.map(cat => {
+    const count = counts[cat] || 0;
+    return `<div class="category-chip" onclick="filterByCategory('${cat}')">${cat} (${count})</div>`;
+  }).join('');
+
+  const stats = window.Categories.getCategoryStats(allProducts);
+  const statsDiv = document.getElementById('categoryStats');
+  statsDiv.innerHTML = `
+    <h3>Category Statistics</h3>
+    <table style="margin-top: 0;">
+      <thead>
+        <tr>
+          <th>Category</th>
+          <th>Products</th>
+          <th>Total Qty</th>
+          <th>Total Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${stats.map(s => `
+          <tr>
+            <td>${s.category}</td>
+            <td>${s.count}</td>
+            <td>${s.totalQty}</td>
+            <td>$${s.totalValue.toFixed(2)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+
+  log(`Categories displayed: ${categories.length} unique categories`, 'success');
+}
+
+function showAllSuppliers() {
+  if (!window.Categories) return;
+
+  const suppliers = window.Categories.getAllSuppliers(allProducts);
+  const counts = window.Categories.getSupplierCounts(allProducts);
+
+  const listDiv = document.getElementById('categoryList');
+  listDiv.innerHTML = suppliers.map(sup => {
+    const count = counts[sup] || 0;
+    return `<div class="category-chip" onclick="filterBySupplier('${sup}')">${sup} (${count})</div>`;
+  }).join('');
+
+  log(`Suppliers displayed: ${suppliers.length} unique suppliers`, 'success');
+}
+
+function filterByCategory(category) {
+  if (!category) {
+    clearFilters();
+    return;
+  }
+
+  currentFilter = { type: 'category', value: category };
+  filteredProducts = window.Categories.getProductsByCategory(allProducts, category);
+  renderProductTable();
+  log(`Filtered by category: ${category} (${filteredProducts.length} products)`, 'info');
+}
+
+function filterBySupplier(supplier) {
+  if (!supplier) {
+    clearFilters();
+    return;
+  }
+
+  currentFilter = { type: 'supplier', value: supplier };
+  filteredProducts = window.Categories.getProductsBySupplier(allProducts, supplier);
+  renderProductTable();
+  log(`Filtered by supplier: ${supplier} (${filteredProducts.length} products)`, 'info');
+}
+
+function filterLowStock() {
+  currentFilter = { type: 'lowStock' };
+  filteredProducts = window.StockLevels.getLowStockProducts(allProducts);
+  renderProductTable();
+  log(`Filtered low stock: ${filteredProducts.length} products`, 'info');
+}
+
+function filterOutOfStock() {
+  currentFilter = { type: 'outOfStock' };
+  filteredProducts = window.StockLevels.getOutOfStockProducts(allProducts);
+  renderProductTable();
+  log(`Filtered out of stock: ${filteredProducts.length} products`, 'info');
+}
+
+function clearFilters() {
+  currentFilter = null;
+  filteredProducts = [...allProducts];
+  renderProductTable();
+  log('Filters cleared', 'info');
+}
+
+// ============================================================================
+// PRODUCT TABLE
+// ============================================================================
+
+function renderProductTable() {
+  if (!window.ProductUI) {
+    log('ProductUI module not loaded', 'error');
+    return;
+  }
+
+  const products = filteredProducts.length > 0 || currentFilter ? filteredProducts : allProducts;
+
+  window.ProductUI.renderProductTable('productTableBody', products, {
+    showPhoto: false,  // No photos in demo
+    showActions: true,
+    showNotes: false
+  });
+
+  // Render header
+  const columns = window.ProductUI.getProductColumns({ showPhoto: false, showNotes: false });
+  const thead = document.getElementById('productTableHead');
+  const headers = columns.map(col => `<th>${col.label}</th>`).join('');
+  thead.innerHTML = `<tr>${headers}</tr>`;
+
+  log(`Table rendered: ${products.length} products`, 'success');
+}
+
+// ============================================================================
+// INITIALIZATION
+// ============================================================================
+
+function initializeTest() {
+  log('Initializing inventory module test...', 'info');
+
+  // Check if all modules loaded
+  const modules = ['Products', 'StockLevels', 'Categories', 'ProductUI', 'ProductActions'];
+  modules.forEach(mod => {
+    if (window[mod]) {
+      log(`✓ ${mod} module loaded`, 'success');
+    } else {
+      log(`✗ ${mod} module NOT loaded`, 'error');
+    }
+  });
+
+  // Load demo button
+  document.getElementById('btnLoadDemo').addEventListener('click', () => {
+    allProducts = generateDemoProducts();
+    filteredProducts = [...allProducts];
+    window.data = allProducts; // Set global for products.js
+    renderStockAlerts();
+    showAllCategories();
+    renderProductTable();
+    log('Demo products loaded successfully', 'success');
+  });
+
+  // New product button
+  document.getElementById('btnNewProduct').addEventListener('click', () => {
+    if (window.ProductUI && window.ProductUI.openProductDialog) {
+      window.ProductUI.openProductDialog();
+      log('New product dialog opened', 'info');
+    }
+  });
+
+  // Dialog close button
+  document.getElementById('btnCloseDialog').addEventListener('click', () => {
+    if (window.ProductUI && window.ProductUI.closeProductDialog) {
+      window.ProductUI.closeProductDialog();
+    }
+  });
+
+  document.getElementById('btnCancelDialog').addEventListener('click', () => {
+    if (window.ProductUI && window.ProductUI.closeProductDialog) {
+      window.ProductUI.closeProductDialog();
+    }
+  });
+
+  // Save product button
+  document.getElementById('btnSaveProduct').addEventListener('click', async () => {
+    if (window.ActionRegistry) {
+      await window.ActionRegistry.execute('save-product', null, {
+        button: document.getElementById('btnSaveProduct')
+      });
+      // Refresh display
+      allProducts = window.data || allProducts;
+      filteredProducts = [...allProducts];
+      renderStockAlerts();
+      showAllCategories();
+      renderProductTable();
+    }
+  });
+
+  // Setup search
+  if (window.ProductUI && window.ProductUI.initProductSearch) {
+    window.ProductUI.initProductSearch('searchProducts', (results) => {
+      filteredProducts = results;
+      renderProductTable();
+      log(`Search results: ${results.length} products`, 'info');
+    });
+  }
+
+  // Bind action buttons (for table actions)
+  if (window.bindActionButtons) {
+    window.bindActionButtons(document.body);
+    log('Action buttons bound', 'success');
+  }
+
+  // Listen for product events
+  if (window.EventBus) {
+    window.EventBus.on('product:created', (data) => {
+      log(`Product created: ${data.product?.name}`, 'success');
+    });
+    window.EventBus.on('product:updated', (data) => {
+      log(`Product updated: ${data.product?.name}`, 'success');
+    });
+    window.EventBus.on('product:deleted', (data) => {
+      log(`Product deleted: ID ${data.id}`, 'error');
+    });
+  }
+
+  log('Test page initialized. Click "Load Demo Products" to begin.', 'success');
+}
+
+// Run on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initializeTest);
+} else {
+  initializeTest();
+}
+</script>
+</body>
+</html>
