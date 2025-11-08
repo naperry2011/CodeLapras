@@ -35,8 +35,14 @@
 <script src="src/js/modules/inventory/products.js"></script>
 <script src="src/js/modules/inventory/stock-levels.js"></script>
 <script src="src/js/modules/inventory/categories.js"></script>
+<script src="src/js/modules/inventory/locations.js"></script>
+<script src="src/js/modules/inventory/transfers.js"></script>
 <script src="src/js/modules/inventory/product-ui.js"></script>
+<script src="src/js/modules/inventory/location-ui.js"></script>
+<script src="src/js/modules/inventory/transfer-ui.js"></script>
 <script src="src/js/modules/inventory/product-actions.js"></script>
+<script src="src/js/modules/inventory/location-actions.js"></script>
+<script src="src/js/modules/inventory/transfer-actions.js"></script>
 
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
@@ -6349,6 +6355,147 @@ renderKits();
 
 /* end of file */
 </script>
+
+<!-- ============================================ -->
+<!-- LOCATION DIALOG (Day 12) -->
+<!-- ============================================ -->
+<div id="locationDialog" class="dialog" style="display: none;">
+  <div class="dialogContent">
+    <div class="dialog-header">
+      <h2 class="dialog-title">New Location</h2>
+      <button class="btn" onclick="LocationUI.closeLocationDialog()" title="Close">✕</button>
+    </div>
+
+    <form id="locationForm" onsubmit="event.preventDefault(); LocationUI.saveLocation();">
+      <div class="form-group">
+        <label for="locationName">Location Name *</label>
+        <input type="text" id="locationName" class="field" required maxlength="100" placeholder="e.g., Main Warehouse">
+      </div>
+
+      <div class="form-group">
+        <label for="locationType">Type</label>
+        <select id="locationType" class="field">
+          <option value="warehouse">Warehouse</option>
+          <option value="store">Store</option>
+          <option value="vehicle">Vehicle</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="locationAddress">Address</label>
+        <input type="text" id="locationAddress" class="field" placeholder="Optional address">
+      </div>
+
+      <div class="form-group">
+        <label for="locationNotes">Notes</label>
+        <textarea id="locationNotes" class="field" rows="3" placeholder="Optional notes"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="locationActive" checked>
+          Active
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="locationDefault">
+          Set as default location
+        </label>
+      </div>
+
+      <div class="btn-group">
+        <button type="submit" class="btn" style="background: var(--accent)">Save</button>
+        <button type="button" class="btn" onclick="LocationUI.closeLocationDialog()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================================ -->
+<!-- TRANSFER DIALOG (Day 12) -->
+<!-- ============================================ -->
+<div id="transferDialog" class="dialog" style="display: none;">
+  <div class="dialogContent">
+    <div class="dialog-header">
+      <h2 class="dialog-title">New Transfer</h2>
+      <button class="btn" onclick="TransferUI.closeTransferDialog()" title="Close">✕</button>
+    </div>
+
+    <form id="transferForm" onsubmit="event.preventDefault(); TransferUI.saveTransfer();">
+      <div class="form-group">
+        <label for="transferProduct">Product *</label>
+        <select id="transferProduct" class="field" required onchange="TransferUI.updateTransferAvailableStock()">
+          <option value="">-- Select Product --</option>
+          <!-- Will be populated by JavaScript -->
+        </select>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex: 1">
+          <label for="transferFrom">From Location *</label>
+          <select id="transferFrom" class="field" required onchange="TransferUI.updateTransferAvailableStock()">
+            <option value="">-- Select Location --</option>
+            <!-- Will be populated by JavaScript -->
+          </select>
+        </div>
+
+        <div class="form-group" style="flex: 1">
+          <label for="transferTo">To Location *</label>
+          <select id="transferTo" class="field" required>
+            <option value="">-- Select Location --</option>
+            <!-- Will be populated by JavaScript -->
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Available Stock at Source</label>
+        <div id="transferAvailableStock" style="padding: 8px; background: var(--bg2); border-radius: 4px; color: var(--accent)">-</div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group" style="flex: 1">
+          <label for="transferQty">Quantity (Cases) *</label>
+          <input type="number" id="transferQty" class="field" min="0" value="0" required>
+        </div>
+
+        <div class="form-group" style="flex: 1">
+          <label for="transferLoose">Loose Units</label>
+          <input type="number" id="transferLoose" class="field" min="0" value="0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="transferDate">Transfer Date *</label>
+        <input type="date" id="transferDate" class="field" required>
+      </div>
+
+      <div class="form-group">
+        <label for="transferReason">Reason</label>
+        <select id="transferReason" class="field">
+          <option value="Restock">Restock</option>
+          <option value="Sale">Sale</option>
+          <option value="Damaged">Damaged</option>
+          <option value="Adjustment">Adjustment</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="transferNotes">Notes</label>
+        <textarea id="transferNotes" class="field" rows="3" placeholder="Optional notes"></textarea>
+      </div>
+
+      <div class="btn-group">
+        <button type="submit" class="btn" style="background: var(--accent)">Save Transfer</button>
+        <button type="button" class="btn" onclick="TransferUI.closeTransferDialog()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
 
 <!-- Toast Notification Container -->
 <div id="toastContainer" class="toast-container"></div>

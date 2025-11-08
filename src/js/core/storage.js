@@ -288,7 +288,9 @@ const STORAGE_KEYS = {
   SHIPMENTS: 'inv.shipments',
   CALENDAR_EVENTS: 'inv.calendarEvents',
   CALENDAR_NOTES: 'inv.calendarNotes',
-  PAY_PERIOD: 'inv.payPeriod'
+  PAY_PERIOD: 'inv.payPeriod',
+  TRANSFERS: 'inv.transfers',
+  LOCATIONS: 'inv.locations'
 };
 
 // ============ Save All Data ============
@@ -325,6 +327,10 @@ function saveAll() {
     if (window.rentals) saveRentals(window.rentals);
     if (window.subscriptions) saveSubscriptions(window.subscriptions);
     if (window.shipments) saveShipments(window.shipments);
+
+    // Save inventory data
+    if (window.transfers) saveTransfers(window.transfers);
+    if (window.locations) saveLocations(window.locations);
 
     // Save calendar data
     if (window.calendarEvents) saveCalendarEvents(window.calendarEvents);
@@ -551,6 +557,38 @@ function loadCalendarNotes() {
  */
 function saveCalendarNotes(notes) {
   LS.set(STORAGE_KEYS.CALENDAR_NOTES, notes);
+}
+
+/**
+ * Load inventory transfers from localStorage
+ * @returns {Array} Transfers array
+ */
+function loadTransfers() {
+  return LS.get(STORAGE_KEYS.TRANSFERS, []);
+}
+
+/**
+ * Save inventory transfers to localStorage
+ * @param {Array} transfers - Transfers to save
+ */
+function saveTransfers(transfers) {
+  LS.set(STORAGE_KEYS.TRANSFERS, transfers);
+}
+
+/**
+ * Load inventory locations from localStorage
+ * @returns {Array} Locations array
+ */
+function loadLocations() {
+  return LS.get(STORAGE_KEYS.LOCATIONS, []);
+}
+
+/**
+ * Save inventory locations to localStorage
+ * @param {Array} locations - Locations to save
+ */
+function saveLocations(locations) {
+  LS.set(STORAGE_KEYS.LOCATIONS, locations);
 }
 
 // ============ Core Business Entity Functions ============
@@ -808,6 +846,8 @@ function backupPayload() {
     rentals: window.rentals || [],
     subscriptions: window.subscriptions || [],
     shipments: window.shipments || [],
+    transfers: window.transfers || [],
+    locations: window.locations || [],
     calendarEvents: window.calendarEvents || [],
     calendarNotes: window.calendarNotes || {}
   };
@@ -865,6 +905,8 @@ function restoreFromObject(obj) {
     if (obj.rentals) window.rentals = obj.rentals;
     if (obj.subscriptions) window.subscriptions = obj.subscriptions;
     if (obj.shipments) window.shipments = obj.shipments;
+    if (obj.transfers) window.transfers = obj.transfers;
+    if (obj.locations) window.locations = obj.locations;
     if (obj.calendarEvents) window.calendarEvents = obj.calendarEvents;
     if (obj.calendarNotes) window.calendarNotes = obj.calendarNotes;
 
@@ -906,4 +948,88 @@ function maybeAutoBackup() {
     window.settings.lastAutoBackupAt = new Date().toISOString();
     LS.set(STORAGE_KEYS.SETTINGS, window.settings);
   }
+}
+
+// ============ Global Exports ============
+if (typeof window !== 'undefined') {
+  window.Storage = {
+    // Core utilities
+    LS,
+    STORAGE_KEYS,
+
+    // Versioning
+    DATA_VERSION,
+    APP_VERSION,
+    getDataVersion,
+    setDataVersion,
+    needsMigration,
+    migrateData,
+    initializeDataVersion,
+    getAppInfo,
+
+    // Validation
+    validateProduct,
+    validateInvoice,
+    validateKit,
+    validateArray,
+    validateSettings,
+    sanitizeData,
+
+    // Save/Load functions
+    saveAll,
+    loadProducts,
+    saveProducts,
+    loadInvoices,
+    saveInvoices,
+    loadKits,
+    saveKits,
+    loadDamaged,
+    saveDamaged,
+    loadSettings,
+    saveSettings,
+    loadSnapshots,
+    saveSnapshots,
+    loadSnaps,
+    saveSnaps,
+    loadCurrentOrder,
+    saveCurrentOrder,
+    loadPO,
+    savePO,
+    loadStatsView,
+    saveStatsView,
+    loadEmployees,
+    saveEmployees,
+    loadEmployeeSchedules,
+    saveEmployeeSchedules,
+    loadEmployeeTimesheets,
+    saveEmployeeTimesheets,
+    loadEmployeeTasks,
+    saveEmployeeTasks,
+    loadPayPeriod,
+    updatePayPeriod,
+    loadPayrollPeriods,
+    savePayrollPeriods,
+    loadDeductions,
+    saveDeductions,
+    loadRentals,
+    saveRentals,
+    loadSubscriptions,
+    saveSubscriptions,
+    loadShipments,
+    saveShipments,
+    loadTransfers,
+    saveTransfers,
+    loadLocations,
+    saveLocations,
+    loadCalendarEvents,
+    saveCalendarEvents,
+    loadCalendarNotes,
+    saveCalendarNotes,
+
+    // Backup/Restore
+    backupPayload,
+    saveBackup,
+    restoreFromObject,
+    maybeAutoBackup
+  };
 }

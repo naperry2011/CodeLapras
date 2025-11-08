@@ -310,6 +310,23 @@ function registerProductActions() {
     }
   });
 
+  // Transfer Stock (Day 12)
+  AR.register('transfer-stock', {
+    label: 'Transfer Stock',
+    icon: '🔄',
+    handler: (data) => {
+      if (!data || !data.id) return;
+
+      // Open transfer dialog with product pre-selected
+      if (window.TransferUI) {
+        window.TransferUI.openTransferDialog(null, data.id);
+      } else {
+        console.warn('TransferUI not available');
+      }
+    },
+    description: 'Transfer stock between locations'
+  });
+
   // ============================================================================
   // EXPORT/IMPORT ACTIONS
   // ============================================================================
@@ -427,6 +444,8 @@ function registerProductContextMenus() {
     { label: 'Edit', action: 'edit-product', icon: '✏️', shortcut: 'Ctrl+E' },
     { label: 'Duplicate', action: 'duplicate-product', icon: '📋', shortcut: 'Ctrl+D' },
     { label: 'View Details', action: 'view-product', icon: '👁️' },
+    { separator: true },
+    { label: 'Transfer Stock', action: 'transfer-stock', icon: '🔄' },
     { separator: true },
     { label: 'Increase Qty', action: 'adjust-quantity-up', icon: '➕' },
     { label: 'Decrease Qty', action: 'adjust-quantity-down', icon: '➖' },

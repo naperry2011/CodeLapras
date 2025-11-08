@@ -35,7 +35,10 @@ function createProduct(data = {}) {
     unitLabel: data.unitLabel || '',
     packageCost: typeof data.packageCost === 'number' ? data.packageCost : 0,
     packageQty: typeof data.packageQty === 'number' ? data.packageQty : 1,
-    components: data.components || ''
+    components: data.components || '',
+    // Multi-location stock support (Day 12)
+    stockByLocation: data.stockByLocation || {},
+    defaultLocationId: data.defaultLocationId || null
   };
 }
 
