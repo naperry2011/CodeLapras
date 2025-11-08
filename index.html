@@ -18,6 +18,10 @@
 <script src="src/js/core/theme.js"></script>
 <script src="src/js/core/initialization.js"></script>
 
+<!-- UI Components -->
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/notifications.js"></script>
+
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
   // CDN-backed loader (only used if local files are missing)
@@ -97,33 +101,9 @@
   </nav>
 
   <script>
-    // Helper to show/close <dialog> elements in browsers that may not support showModal/close
-    function showDialog(dlg) {
-      if (!dlg) return;
-      // Try native showModal for browsers that support it; fall back to open attribute
-      try {
-        if (typeof dlg.showModal === 'function') {
-          dlg.showModal();
-        } else {
-          dlg.setAttribute('open', '');
-        }
-      } catch (e) {
-        dlg.setAttribute('open', '');
-      }
-    }
-    function hideDialog(dlg) {
-      if (!dlg) return;
-      // Try native close; fall back to removing open attribute
-      try {
-        if (typeof dlg.close === 'function') {
-          dlg.close();
-        } else {
-          dlg.removeAttribute('open');
-        }
-      } catch (e) {
-        dlg.removeAttribute('open');
-      }
-    }
+    // NOTE: showDialog() and hideDialog() are now defined in src/js/ui/dialogs.js
+    // This provides better animations, keyboard support, and focus management.
+
     // Tab navigation and single-card view logic
     document.addEventListener('DOMContentLoaded', function() {
       const params = new URLSearchParams(window.location.search);
@@ -6353,5 +6333,9 @@ renderKits();
 
 /* end of file */
 </script>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="toast-container"></div>
+
 </body>
 </html>

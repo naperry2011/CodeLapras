@@ -83,3 +83,234 @@ select option:checked{
   background: var(--opt-active) !important;
   color: var(--opt-active-text) !important;
 }
+
+/* =========================
+   DIALOG ANIMATIONS
+   ========================= */
+
+/* Dialog entering animation */
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Dialog leaving animation */
+@keyframes dialogFadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+}
+
+/* Backdrop fade in */
+@keyframes backdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Apply animations to dialog */
+dialog.dialog-entering {
+  animation: dialogFadeIn 0.3s ease-out;
+}
+
+dialog.dialog-leaving {
+  animation: dialogFadeOut 0.3s ease-in;
+}
+
+dialog::backdrop {
+  animation: backdropFadeIn 0.3s ease-out;
+}
+
+/* =========================
+   TOAST NOTIFICATIONS
+   ========================= */
+
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  max-width: 400px;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--card);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 8px 24px var(--shadow), 0 0 0 1px var(--border);
+  pointer-events: auto;
+  min-width: 280px;
+  animation: toastSlideIn 0.3s ease-out;
+  transition: transform 0.2s ease-out;
+}
+
+.toast:hover {
+  transform: translateX(-4px);
+}
+
+.toast-icon {
+  flex-shrink: 0;
+  font-size: 20px;
+  font-weight: bold;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.toast-message {
+  flex: 1;
+  line-height: 1.4;
+  font-size: 14px;
+}
+
+.toast-close {
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text);
+}
+
+/* Toast type colors */
+.toast-success {
+  border-left: 4px solid #18d47b;
+}
+
+.toast-success .toast-icon {
+  color: #18d47b;
+  background: rgba(24, 212, 123, 0.15);
+}
+
+.toast-error {
+  border-left: 4px solid #ff4757;
+}
+
+.toast-error .toast-icon {
+  color: #ff4757;
+  background: rgba(255, 71, 87, 0.15);
+}
+
+.toast-warning {
+  border-left: 4px solid #ffa502;
+}
+
+.toast-warning .toast-icon {
+  color: #ffa502;
+  background: rgba(255, 165, 2, 0.15);
+}
+
+.toast-info {
+  border-left: 4px solid #3498db;
+}
+
+.toast-info .toast-icon {
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.15);
+}
+
+/* Toast animations */
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes toastSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.toast-entering {
+  animation: toastSlideIn 0.3s ease-out;
+}
+
+.toast-leaving {
+  animation: toastSlideOut 0.3s ease-in;
+}
+
+/* =========================
+   CONFIRM/PROMPT DIALOGS
+   ========================= */
+
+.dialog-confirm .dlg-grid,
+.dialog-prompt .dlg-grid {
+  display: block;
+  padding: 24px;
+}
+
+.confirm-message,
+.prompt-message {
+  margin: 0 0 20px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.dialog-prompt .promptInput {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--input-bg);
+  color: var(--text);
+  font-size: 14px;
+  font-family: inherit;
+  margin-bottom: 16px;
+}
+
+.dialog-prompt .promptInput:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-color: var(--accent);
+}

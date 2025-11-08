@@ -18,31 +18,11 @@ const $ = s => document.querySelector(s);
  */
 const $$ = s => [...document.querySelectorAll(s)];
 
-/**
- * Show dialog with fallback for non-supporting browsers
- * @param {HTMLDialogElement} dlg - Dialog element to show
- */
-function showDialog(dlg) {
-  if (!dlg) return;
-  if (typeof dlg.showModal === 'function') {
-    dlg.showModal();
-  } else {
-    dlg.style.display = 'block';
-  }
-}
-
-/**
- * Hide dialog with fallback for non-supporting browsers
- * @param {HTMLDialogElement} dlg - Dialog element to hide
- */
-function hideDialog(dlg) {
-  if (!dlg) return;
-  if (typeof dlg.close === 'function') {
-    dlg.close();
-  } else {
-    dlg.style.display = 'none';
-  }
-}
+// ============ Dialog Functions ============
+// NOTE: Dialog management functions have been moved to src/js/ui/dialogs.js
+// This provides better animations, keyboard support, and focus management.
+// Functions showDialog() and hideDialog() are now defined in dialogs.js
+// and exported to the window object for backward compatibility.
 
 // ============ Data Formatting ============
 /**

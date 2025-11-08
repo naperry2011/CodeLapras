@@ -7,6 +7,91 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added - Day 7 (Dialog & Modal System)
+- Created **`src/js/ui/dialogs.js`** - Complete dialog management system (~330 lines)
+  - **Core Functions**:
+    - `showDialog(dialog, options)` - Open dialog with animations and focus management
+    - `hideDialog(dialog, callback)` - Close dialog with animations
+    - `createDialog(config)` - Programmatically create dialogs
+    - `getDialogTemplate(type)` - Template system for common dialog types
+    - `isDialogOpen()`, `getActiveDialog()`, `closeAllDialogs()` - Dialog state management
+  - **Enhanced Features**:
+    - Smooth fade-in/fade-out animations (300ms)
+    - Focus management: Auto-focus first input, restore focus on close
+    - Focus trapping with Tab key navigation
+    - ESC key to close dialogs (global handler)
+    - Backdrop click-to-close support
+    - Dialog stack management for multiple open dialogs
+    - Prevent body scrolling when modal is open
+    - ARIA attributes for accessibility (aria-modal, role, aria-labelledby)
+  - **Backward Compatibility**:
+    - Fallback support for browsers without native `<dialog>` element
+    - Functions exported to `window` object
+    - Maintains existing dialog HTML structure
+  - Consolidated duplicate functions from `utils.js` and `index.html`
+- Created **`src/js/ui/notifications.js`** - Toast notification and confirmation system (~350 lines)
+  - **Toast Functions**:
+    - `showToast(message, type, duration)` - Display toast with auto-dismiss
+    - `showSuccess()`, `showError()`, `showWarning()`, `showInfo()` - Convenience wrappers
+    - `dismissToast(id)`, `dismissAllToasts()` - Manual dismissal
+  - **Dialog Replacements**:
+    - `showConfirm(message, options)` - Custom confirmation dialog (returns Promise)
+    - `showPrompt(message, defaultValue, options)` - Custom prompt dialog (returns Promise)
+    - Full replacement for native `alert()`, `confirm()`, and `prompt()`
+  - **Toast Features**:
+    - 4 types: success (green), error (red), warning (yellow), info (blue)
+    - Color-coded borders and icons (✓, ✕, ⚠, ℹ)
+    - Auto-dismiss after configurable duration (default: 4s)
+    - Stack multiple toasts vertically
+    - Slide-in from right animation
+    - Hover effect (slide left)
+    - Manual close button
+    - XSS protection with HTML escaping
+  - **Confirm/Prompt Features**:
+    - Modern styled dialogs instead of native browser popups
+    - Promise-based API for async/await support
+    - Keyboard support (Enter to confirm, ESC to cancel)
+    - Customizable button text and styles
+    - Auto-cleanup after dialog closes
+- Updated **`src/styles/forms.css`** - Added dialog animations and toast styling (~230 lines added)
+  - **Dialog Animations**:
+    - `@keyframes dialogFadeIn` - Fade in with scale and translateY
+    - `@keyframes dialogFadeOut` - Fade out with scale and translateY
+    - `@keyframes backdropFadeIn` - Backdrop fade animation
+    - Classes: `.dialog-entering`, `.dialog-leaving`
+  - **Toast Styling**:
+    - `.toast-container` - Fixed top-right position
+    - `.toast` - Card-based design with shadows
+    - Type-specific colors and icons
+    - `@keyframes toastSlideIn/Out` - Slide animations from right
+    - Responsive design (max-width 400px)
+  - **Confirm/Prompt Styling**:
+    - Simplified layout for confirmation dialogs
+    - Input field styling for prompt dialogs
+    - Focus rings and accessibility
+- Updated **`src/js/core/utils.js`**
+  - Removed duplicate `showDialog()` and `hideDialog()` functions
+  - Added comment explaining migration to `dialogs.js`
+  - Maintains backward compatibility via window exports
+- Updated **`index.html`**
+  - Added script tags for new UI modules (after core modules)
+  - Removed duplicate dialog helper functions (lines 101-126)
+  - Added toast container div before `</body>`
+  - All 10 existing dialogs remain in place and compatible
+- **Statistics**:
+  - 2 new UI module files created
+  - ~680 lines of new JavaScript code
+  - ~230 lines of new CSS
+  - 49 lines removed (duplicate functions)
+  - All files pass syntax validation
+  - Zero breaking changes to existing dialogs
+- **User Experience Improvements**:
+  - Smooth animations for all dialog interactions
+  - Professional toast notifications instead of browser alerts
+  - Better keyboard navigation and accessibility
+  - Focus management prevents accessibility issues
+  - Consistent behavior across all browsers
+
 ### Added - Day 6 (Core Storage Operations)
 - Created **`src/js/core/eventBus.js`** - Pub/sub event system for cross-module communication
   - Subscribe/unsubscribe with `on()` and `off()`
