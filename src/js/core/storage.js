@@ -3,6 +3,9 @@
    CodeLapras - LocalStorage Wrapper & Persistence
    ============================================ */
 
+// Import constants (will be available after module conversion)
+// For now, we'll define STORAGE_KEYS locally and will refactor later
+
 // ============ LocalStorage Wrapper ============
 /**
  * LocalStorage wrapper with JSON serialization
@@ -61,6 +64,205 @@ const LS = {
   }
 };
 
+// ============ Data Validation ============
+
+/**
+ * Validate product object structure
+ * @param {object} product - Product to validate
+ * @returns {boolean} True if valid
+ */
+function validateProduct(product) {
+  if (!product || typeof product !== 'object') return false;
+  if (!product.id || typeof product.id !== 'string') return false;
+  if (typeof product.name !== 'string') return false;
+  if (typeof product.qty !== 'number' || product.qty < 0) return false;
+  return true;
+}
+
+/**
+ * Validate invoice object structure
+ * @param {object} invoice - Invoice to validate
+ * @returns {boolean} True if valid
+ */
+function validateInvoice(invoice) {
+  if (!invoice || typeof invoice !== 'object') return false;
+  if (!invoice.id || typeof invoice.id !== 'string') return false;
+  if (!Array.isArray(invoice.items)) return false;
+  if (typeof invoice.total !== 'number' || invoice.total < 0) return false;
+  return true;
+}
+
+/**
+ * Validate kit object structure
+ * @param {object} kit - Kit to validate
+ * @returns {boolean} True if valid
+ */
+function validateKit(kit) {
+  if (!kit || typeof kit !== 'object') return false;
+  if (!kit.id || typeof kit.id !== 'string') return false;
+  if (!Array.isArray(kit.components)) return false;
+  return true;
+}
+
+/**
+ * Validate array data
+ * @param {Array} arr - Array to validate
+ * @param {Function} validator - Validation function for items
+ * @returns {boolean} True if valid
+ */
+function validateArray(arr, validator) {
+  if (!Array.isArray(arr)) return false;
+  if (validator) {
+    return arr.every(item => validator(item));
+  }
+  return true;
+}
+
+/**
+ * Validate settings object
+ * @param {object} settings - Settings to validate
+ * @returns {boolean} True if valid
+ */
+function validateSettings(settings) {
+  if (!settings || typeof settings !== 'object') return false;
+  // Settings can have various properties, just ensure it's an object
+  return true;
+}
+
+/**
+ * Sanitize and ensure data integrity before storage operations
+ * @param {*} data - Data to sanitize
+ * @param {string} type - Data type (product, invoice, etc.)
+ * @returns {*} Sanitized data or null if invalid
+ */
+function sanitizeData(data, type) {
+  try {
+    if (data === null || data === undefined) return null;
+
+    // Deep clone to avoid mutation
+    const cloned = JSON.parse(JSON.stringify(data));
+
+    switch (type) {
+      case 'product':
+        return validateProduct(cloned) ? cloned : null;
+      case 'invoice':
+        return validateInvoice(cloned) ? cloned : null;
+      case 'kit':
+        return validateKit(cloned) ? cloned : null;
+      case 'array':
+        return Array.isArray(cloned) ? cloned : [];
+      case 'object':
+        return typeof cloned === 'object' ? cloned : {};
+      default:
+        return cloned;
+    }
+  } catch (err) {
+    console.error('Data sanitization error:', err);
+    return null;
+  }
+}
+
+// ============ Versioning & Migration ============
+
+/**
+ * Current data schema version
+ */
+const DATA_VERSION = 1;
+
+/**
+ * Application version
+ */
+const APP_VERSION = '1.0.0';
+
+/**
+ * Get stored data version
+ * @returns {number} Data version
+ */
+function getDataVersion() {
+  return LS.get('inv.dataVersion', 0);
+}
+
+/**
+ * Set data version
+ * @param {number} version - Version number
+ */
+function setDataVersion(version) {
+  LS.set('inv.dataVersion', version);
+}
+
+/**
+ * Check if data migration is needed
+ * @returns {boolean} True if migration needed
+ */
+function needsMigration() {
+  const currentVersion = getDataVersion();
+  return currentVersion < DATA_VERSION;
+}
+
+/**
+ * Migrate data from old version to current version
+ * @param {number} fromVersion - Version to migrate from
+ * @returns {boolean} Success
+ */
+function migrateData(fromVersion) {
+  try {
+    console.log(`Migrating data from version ${fromVersion} to ${DATA_VERSION}`);
+
+    // Migration logic for different versions
+    if (fromVersion < 1) {
+      // Migration from version 0 to 1
+      // For now, just ensure data version is set
+      console.log('Migration v0 -> v1: Initializing data version');
+    }
+
+    // Add more migration steps as needed for future versions
+    // if (fromVersion < 2) { ... }
+
+    // Set current version
+    setDataVersion(DATA_VERSION);
+    console.log('Data migration completed successfully');
+    return true;
+
+  } catch (err) {
+    console.error('Data migration failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Initialize or migrate data on app startup
+ * @returns {boolean} Success
+ */
+function initializeDataVersion() {
+  try {
+    if (needsMigration()) {
+      const currentVersion = getDataVersion();
+      return migrateData(currentVersion);
+    } else {
+      // Ensure version is set even if no migration needed
+      setDataVersion(DATA_VERSION);
+      return true;
+    }
+  } catch (err) {
+    console.error('Data version initialization failed:', err);
+    return false;
+  }
+}
+
+/**
+ * Get application info for debugging
+ * @returns {object} App info
+ */
+function getAppInfo() {
+  return {
+    appVersion: APP_VERSION,
+    dataVersion: getDataVersion(),
+    expectedDataVersion: DATA_VERSION,
+    needsMigration: needsMigration(),
+    storageAvailable: LS.ok()
+  };
+}
+
 // ============ Storage Keys Constants ============
 const STORAGE_KEYS = {
   DATA: 'inv.data',
@@ -92,23 +294,64 @@ const STORAGE_KEYS = {
 // ============ Save All Data ============
 /**
  * Save all app state to localStorage
+ * Uses individual save functions for better organization and validation
  */
 function saveAll() {
   if (!window.data) return;
 
-  LS.set(STORAGE_KEYS.DATA, window.data);
-  LS.set(STORAGE_KEYS.ORDER, window.order || {});
-  LS.set(STORAGE_KEYS.PO, window.po || {});
-  LS.set(STORAGE_KEYS.DAMAGED, window.damaged || []);
-  LS.set(STORAGE_KEYS.INVOICES, window.invoices || []);
-  LS.set(STORAGE_KEYS.KITS, window.kits || []);
-  LS.set(STORAGE_KEYS.SETTINGS, window.settings || {});
-  LS.set(STORAGE_KEYS.SNAPSHOTS, window.snapshots || {});
-  LS.set(STORAGE_KEYS.STATS_VIEW, window.statsView || 'all');
-  LS.set(STORAGE_KEYS.SNAPS, window.snaps || []);
+  try {
+    // Save core business data using individual functions
+    saveProducts(window.data);
+    saveCurrentOrder(window.order || {});
+    savePO(window.po || {});
+    saveDamaged(window.damaged || []);
+    saveInvoices(window.invoices || []);
+    saveKits(window.kits || []);
+    saveSettings(window.settings || {});
+    saveSnapshots(window.snapshots || {});
+    saveSnaps(window.snaps || []);
+    saveStatsView(window.statsView || 'all');
 
-  if (typeof window.markSaved === 'function') {
-    window.markSaved();
+    // Save employee data
+    if (window.employees) saveEmployees(window.employees);
+    if (window.employeeSchedules) saveEmployeeSchedules(window.employeeSchedules);
+    if (window.employeeTimesheets) saveEmployeeTimesheets(window.employeeTimesheets);
+    if (window.employeeTasks) saveEmployeeTasks(window.employeeTasks);
+    if (window.payrollPeriods) savePayrollPeriods(window.payrollPeriods);
+    if (window.deductions) saveDeductions(window.deductions);
+    if (window.payPeriod) updatePayPeriod(window.payPeriod);
+
+    // Save other business data
+    if (window.rentals) saveRentals(window.rentals);
+    if (window.subscriptions) saveSubscriptions(window.subscriptions);
+    if (window.shipments) saveShipments(window.shipments);
+
+    // Save calendar data
+    if (window.calendarEvents) saveCalendarEvents(window.calendarEvents);
+    if (window.calendarNotes) saveCalendarNotes(window.calendarNotes);
+
+    // Mark as saved and trigger related actions
+    if (typeof window.markSaved === 'function') {
+      window.markSaved();
+    }
+
+    // Trigger snapshot if needed
+    if (typeof window.snapshotThisMonthOnce === 'function') {
+      window.snapshotThisMonthOnce();
+    }
+
+    // Refresh backup banner if needed
+    if (typeof window.refreshBackupBanner === 'function') {
+      window.refreshBackupBanner();
+    }
+
+    // Render stats if needed
+    if (typeof window.renderStats === 'function') {
+      window.renderStats();
+    }
+
+  } catch (err) {
+    console.error('Error in saveAll:', err);
   }
 }
 
@@ -308,6 +551,233 @@ function loadCalendarNotes() {
  */
 function saveCalendarNotes(notes) {
   LS.set(STORAGE_KEYS.CALENDAR_NOTES, notes);
+}
+
+// ============ Core Business Entity Functions ============
+
+/**
+ * Load products/inventory data from localStorage
+ * @returns {Array} Products array
+ */
+function loadProducts() {
+  return LS.get(STORAGE_KEYS.DATA, []);
+}
+
+/**
+ * Save products/inventory data to localStorage
+ * @param {Array} products - Products to save
+ */
+function saveProducts(products) {
+  try {
+    // Normalize items before persisting
+    if (Array.isArray(products) && typeof window.normalizeItemUnits === 'function') {
+      for (const item of products) {
+        window.normalizeItemUnits(item);
+      }
+    }
+    LS.set(STORAGE_KEYS.DATA, products);
+  } catch (err) {
+    console.error('Failed to save products:', err);
+  }
+}
+
+/**
+ * Load invoices from localStorage
+ * @returns {Array} Invoices array
+ */
+function loadInvoices() {
+  return LS.get(STORAGE_KEYS.INVOICES, []);
+}
+
+/**
+ * Save invoices to localStorage
+ * @param {Array} invoices - Invoices to save
+ */
+function saveInvoices(invoices) {
+  LS.set(STORAGE_KEYS.INVOICES, invoices);
+}
+
+/**
+ * Load kits from localStorage
+ * @returns {Array} Kits array
+ */
+function loadKits() {
+  return LS.get(STORAGE_KEYS.KITS, []);
+}
+
+/**
+ * Save kits to localStorage
+ * @param {Array} kits - Kits to save
+ */
+function saveKits(kits) {
+  LS.set(STORAGE_KEYS.KITS, kits);
+}
+
+/**
+ * Load damaged/loss records from localStorage
+ * @returns {Array} Damaged records array
+ */
+function loadDamaged() {
+  return LS.get(STORAGE_KEYS.DAMAGED, []);
+}
+
+/**
+ * Save damaged/loss records to localStorage
+ * @param {Array} damaged - Damaged records to save
+ */
+function saveDamaged(damaged) {
+  LS.set(STORAGE_KEYS.DAMAGED, damaged);
+}
+
+/**
+ * Load app settings from localStorage
+ * @returns {object} Settings object
+ */
+function loadSettings() {
+  const defaultSettings = {
+    taxDefault: 0,
+    invPrefix: 'INV-',
+    highContrast: false,
+    backupReminders: false,
+    lastBackupAt: null,
+    logo: '',
+    themeMode: 'dark',
+    currency: 'USD',
+    compactRows: false,
+    autoBackupFreq: 'off',
+    lastAutoBackupAt: null,
+    backupKeep: 5,
+    footerImage: '',
+    footerNotes: '',
+    tabVisibility: {},
+    sideOrder: []
+  };
+
+  const settings = LS.get(STORAGE_KEYS.SETTINGS, defaultSettings);
+
+  // Initialize theme tokens if not present
+  if (!settings.themeTokens) {
+    settings.themeTokens = {
+      dark: {
+        bg: '#0b0e12',
+        bg2: '#10151c',
+        text: '#e7ecf2',
+        muted: '#aab4c2',
+        accent: '#18d47b',
+        danger: '#ff5e6a',
+        warn: '#ffb020',
+        card: '#0f141b',
+        border: '#233041',
+        shadow: 'rgba(0,0,0,.35)'
+      },
+      light: {
+        bg: '#f5f8fc',
+        bg2: '#ffffff',
+        text: '#0f1720',
+        muted: '#4a5a6f',
+        accent: '#09e3f3',
+        danger: '#c62828',
+        warn: '#b26a00',
+        card: '#ffffff',
+        border: '#d9e3ef',
+        shadow: 'rgba(0,0,0,.12)'
+      },
+      hc: {
+        border: '#4aa3ff',
+        muted: '#dfe7f2'
+      }
+    };
+  }
+
+  return settings;
+}
+
+/**
+ * Save app settings to localStorage
+ * @param {object} settings - Settings to save
+ */
+function saveSettings(settings) {
+  LS.set(STORAGE_KEYS.SETTINGS, settings);
+}
+
+/**
+ * Load monthly snapshots from localStorage
+ * @returns {object} Snapshots object
+ */
+function loadSnapshots() {
+  return LS.get(STORAGE_KEYS.SNAPSHOTS, {});
+}
+
+/**
+ * Save monthly snapshots to localStorage
+ * @param {object} snapshots - Snapshots to save
+ */
+function saveSnapshots(snapshots) {
+  LS.set(STORAGE_KEYS.SNAPSHOTS, snapshots);
+}
+
+/**
+ * Load snapshot history from localStorage
+ * @returns {Array} Snapshot history array
+ */
+function loadSnaps() {
+  return LS.get(STORAGE_KEYS.SNAPS, []);
+}
+
+/**
+ * Save snapshot history to localStorage
+ * @param {Array} snaps - Snapshot history to save
+ */
+function saveSnaps(snaps) {
+  LS.set(STORAGE_KEYS.SNAPS, snaps);
+}
+
+/**
+ * Load current order from localStorage
+ * @returns {object} Current order object
+ */
+function loadCurrentOrder() {
+  return LS.get(STORAGE_KEYS.ORDER, {});
+}
+
+/**
+ * Save current order to localStorage
+ * @param {object} order - Order to save
+ */
+function saveCurrentOrder(order) {
+  LS.set(STORAGE_KEYS.ORDER, order);
+}
+
+/**
+ * Load purchase order from localStorage
+ * @returns {object} Purchase order object
+ */
+function loadPO() {
+  return LS.get(STORAGE_KEYS.PO, {});
+}
+
+/**
+ * Save purchase order to localStorage
+ * @param {object} po - Purchase order to save
+ */
+function savePO(po) {
+  LS.set(STORAGE_KEYS.PO, po);
+}
+
+/**
+ * Load statistics view mode from localStorage
+ * @returns {string} Stats view mode
+ */
+function loadStatsView() {
+  return LS.get(STORAGE_KEYS.STATS_VIEW, 'all');
+}
+
+/**
+ * Save statistics view mode to localStorage
+ * @param {string} view - Stats view mode
+ */
+function saveStatsView(view) {
+  LS.set(STORAGE_KEYS.STATS_VIEW, view);
 }
 
 // ============ Backup & Restore ============

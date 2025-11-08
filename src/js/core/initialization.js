@@ -5,36 +5,27 @@
 
 /**
  * Initialize application state from localStorage
+ * Uses new storage abstraction layer functions
  */
 function initializeAppState() {
-  // Load all data from localStorage
-  window.data = LS.get(STORAGE_KEYS.DATA, []);
-  window.order = LS.get(STORAGE_KEYS.ORDER, {});
-  window.po = LS.get(STORAGE_KEYS.PO, {});
-  window.theme = LS.get(STORAGE_KEYS.THEME, 'dark');
-  window.damaged = LS.get(STORAGE_KEYS.DAMAGED, []);
-  window.invoices = LS.get(STORAGE_KEYS.INVOICES, []);
-  window.kits = LS.get(STORAGE_KEYS.KITS, []);
-  window.snapshots = LS.get(STORAGE_KEYS.SNAPSHOTS, {});
-  window.statsView = LS.get(STORAGE_KEYS.STATS_VIEW, 'all');
-  window.snaps = LS.get(STORAGE_KEYS.SNAPS, []);
-  window.backups = LS.get(STORAGE_KEYS.BACKUPS, []);
+  // Initialize data versioning and perform migrations if needed
+  if (typeof initializeDataVersion === 'function') {
+    initializeDataVersion();
+  }
 
-  // Load settings with defaults
-  window.settings = LS.get(STORAGE_KEYS.SETTINGS, {
-    taxDefault: 0,
-    invPrefix: 'INV-',
-    highContrast: false,
-    backupReminders: false,
-    lastBackupAt: null,
-    logo: '',
-    themeMode: 'dark',
-    currency: 'USD',
-    compactRows: false,
-    autoBackupFreq: 'off',
-    lastAutoBackupAt: null,
-    backupKeep: 5
-  });
+  // Load core business data using new storage functions
+  window.data = loadProducts();
+  window.order = loadCurrentOrder();
+  window.po = loadPO();
+  window.theme = LS.get(STORAGE_KEYS.THEME, 'dark');
+  window.damaged = loadDamaged();
+  window.invoices = loadInvoices();
+  window.kits = loadKits();
+  window.settings = loadSettings();
+  window.snapshots = loadSnapshots();
+  window.snaps = loadSnaps();
+  window.statsView = loadStatsView();
+  window.backups = LS.get(STORAGE_KEYS.BACKUPS, []);
 
   // Initialize employees and related data
   window.employees = loadEmployees();
@@ -43,16 +34,24 @@ function initializeAppState() {
   window.employeeTasks = loadEmployeeTasks();
   window.payrollPeriods = loadPayrollPeriods();
   window.deductions = loadDeductions();
+  window.payPeriod = loadPayPeriod();
 
-  // Initialize other modules
+  // Initialize other business modules
   window.rentals = loadRentals();
   window.subscriptions = loadSubscriptions();
   window.shipments = loadShipments();
+
+  // Initialize calendar module
   window.calendarEvents = loadCalendarEvents();
   window.calendarNotes = loadCalendarNotes();
 
   // Initialize dirty flag
   window.dirty = false;
+
+  // Log app info for debugging (can be removed in production)
+  if (typeof getAppInfo === 'function') {
+    console.log('App Info:', getAppInfo());
+  }
 }
 
 /**
