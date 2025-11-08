@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Table System Test - Day 9</title>
+<link rel="stylesheet" href="src/styles/themes.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/tables.css">
+
+<!-- Day 9 UI Components -->
+<script src="src/js/ui/tables.js"></script>
+<script src="src/js/ui/search.js"></script>
+<script src="src/js/ui/pagination.js"></script>
+<script src="src/js/ui/filters.js"></script>
+
+<style>
+  body {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .test-section {
+    margin-bottom: 3rem;
+    padding: 1.5rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+  }
+
+  .test-section h2 {
+    margin-top: 0;
+    color: #333;
+  }
+
+  .controls {
+    margin-bottom: 1rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .search-highlight {
+    background-color: yellow;
+    font-weight: bold;
+  }
+
+  .pagination {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    flex-wrap: wrap;
+  }
+
+  .pagination-info {
+    color: #666;
+    font-size: 0.9rem;
+  }
+
+  .pagination-controls {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .pagination-btn {
+    padding: 0.5rem 1rem;
+  }
+
+  .pagination-btn.active {
+    background: #007bff;
+    color: white;
+  }
+
+  .pagination-ellipsis {
+    padding: 0.5rem;
+    color: #999;
+  }
+
+  .pagination-size {
+    margin-left: auto;
+  }
+
+  .filters {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: #f9f9f9;
+    border-radius: 4px;
+  }
+
+  .filter-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .filter-control label {
+    font-weight: bold;
+    font-size: 0.9rem;
+  }
+
+  .filter-control select,
+  .filter-control input {
+    padding: 0.5rem;
+  }
+
+  .range-inputs {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .range-inputs input {
+    width: 100px;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: normal !important;
+  }
+
+  .status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+
+  .status-active {
+    background: #d4edda;
+    color: #155724;
+  }
+
+  .status-inactive {
+    background: #f8d7da;
+    color: #721c24;
+  }
+
+  .status-pending {
+    background: #fff3cd;
+    color: #856404;
+  }
+
+  .row-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-icon {
+    padding: 0.25rem 0.5rem;
+    background: none;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .btn-icon:hover {
+    background: #f0f0f0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: bold;
+    text-align: left;
+    position: sticky;
+    top: 0;
+  }
+
+  th.sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  th.sortable:hover {
+    background: #e8e8e8;
+  }
+
+  .demo-data {
+    background: #e7f3ff;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+
+  .success-message {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+<h1>Day 9: Table & Data Display System - Integration Test</h1>
+
+<div class="demo-data">
+  <strong>Test Instructions:</strong>
+  <ol>
+    <li>Search for products by typing in the search box (debounced 300ms)</li>
+    <li>Click column headers to sort ascending/descending</li>
+    <li>Use filters to narrow down results (status, price range)</li>
+    <li>Navigate pages using pagination controls</li>
+    <li>Change page size to see different amounts per page</li>
+    <li>Click action buttons (edit, delete) to test event delegation</li>
+  </ol>
+</div>
+
+<!-- Test Section 1: Full Integration -->
+<div class="test-section">
+  <h2>Test 1: Full Integration (Search + Filter + Sort + Pagination)</h2>
+
+  <div class="controls">
+    <label>
+      Search: <input type="text" id="searchInput" placeholder="Search products...">
+    </label>
+    <button class="btn" onclick="loadDemoData()">Load Demo Data (100 products)</button>
+  </div>
+
+  <div id="filterContainer"></div>
+
+  <div style="overflow-x: auto;">
+    <table>
+      <thead id="tableHeader"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+
+  <div id="paginationContainer"></div>
+
+  <div id="statusMessage" style="margin-top: 1rem; color: #666;"></div>
+</div>
+
+<!-- Test Section 2: Formatters Demo -->
+<div class="test-section">
+  <h2>Test 2: Built-in Formatters Demo</h2>
+  <div style="overflow-x: auto;">
+    <table>
+      <thead id="formattersHeader"></thead>
+      <tbody id="formattersBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// DEMO DATA GENERATION
+// ============================================================================
+
+const categories = ['Electronics', 'Furniture', 'Clothing', 'Food', 'Books', 'Toys'];
+const statuses = ['Active', 'Inactive', 'Pending'];
+
+function generateDemoData(count = 100) {
+  const data = [];
+  for (let i = 1; i <= count; i++) {
+    data.push({
+      id: i,
+      name: `Product ${i}`,
+      sku: `SKU-${String(i).padStart(5, '0')}`,
+      category: categories[Math.floor(Math.random() * categories.length)],
+      price: Math.round(Math.random() * 1000 * 100) / 100,
+      qty: Math.floor(Math.random() * 200),
+      reorderAt: Math.floor(Math.random() * 30),
+      status: statuses[Math.floor(Math.random() * statuses.length)],
+      inStock: Math.random() > 0.3,
+      createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString()
+    });
+  }
+  return data;
+}
+
+// ============================================================================
+// TEST 1: FULL INTEGRATION
+// ============================================================================
+
+let allData = [];
+let currentData = [];
+let sortState = { key: null, direction: 'asc' };
+
+// Column definitions
+const columns = [
+  { key: 'id', label: 'ID', sortable: true },
+  { key: 'name', label: 'Product Name', sortable: true },
+  { key: 'sku', label: 'SKU', sortable: true },
+  { key: 'category', label: 'Category', sortable: true },
+  {
+    key: 'price',
+    label: 'Price',
+    sortable: true,
+    formatter: TableRenderer.formatters.currency
+  },
+  {
+    key: 'qty',
+    label: 'Quantity',
+    sortable: true,
+    formatter: TableRenderer.formatters.quantity
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    formatter: TableRenderer.formatters.status
+  },
+  {
+    key: 'createdAt',
+    label: 'Created',
+    sortable: true,
+    formatter: TableRenderer.formatters.date
+  },
+  {
+    key: 'actions',
+    label: 'Actions',
+    sortable: false,
+    formatter: TableRenderer.formatters.actions(['edit', 'delete', 'view'])
+  }
+];
+
+// Filter configurations
+const filterConfigs = [
+  {
+    key: 'status',
+    type: 'select',
+    label: 'Status',
+    options: statuses,
+    value: null,
+    active: false
+  },
+  {
+    key: 'price',
+    type: 'numeric-range',
+    label: 'Price Range',
+    min: undefined,
+    max: undefined,
+    active: false
+  },
+  {
+    key: 'category',
+    type: 'multi-select',
+    label: 'Categories',
+    options: categories,
+    values: [],
+    active: false
+  }
+];
+
+// Create controllers
+const searchController = Search.createSearchController([], ['name', 'sku', 'category']);
+const filterController = Filters.createFilterController([], filterConfigs);
+const paginator = Pagination.createPaginator([], { pageSize: 10 });
+
+// Setup data flow pipeline
+function updateDisplay() {
+  // Pipeline: All Data → Filter → Search → Sort → Paginate → Render
+  let processedData = allData;
+
+  // Apply filters
+  processedData = filterController.getFiltered();
+
+  // Apply search
+  processedData = searchController.getResults();
+
+  // Apply sort
+  if (sortState.key) {
+    processedData = TableRenderer.sortData(processedData, sortState.key, sortState.direction);
+  }
+
+  // Update paginator data
+  paginator.updateData(processedData);
+
+  // Get current page
+  const pageData = paginator.getPage();
+
+  // Render table
+  TableRenderer.renderTable('tableBody', pageData, columns, {
+    emptyMessage: 'No products found. Try adjusting your filters or search.'
+  });
+
+  // Render header with sort indicators
+  TableRenderer.renderTableHeader('tableHeader', columns, sortState, (key, direction) => {
+    sortState = { key, direction };
+    updateDisplay();
+  });
+
+  // Render pagination
+  paginator.renderControls('paginationContainer', {
+    maxPageButtons: 7,
+    showPageSize: true,
+    pageSizeOptions: [10, 25, 50, 100]
+  });
+
+  // Update status message
+  const meta = paginator.getMeta();
+  document.getElementById('statusMessage').textContent =
+    `Showing ${meta.startItem}-${meta.endItem} of ${meta.totalItems} products (Filtered from ${allData.length} total)`;
+}
+
+// Load demo data
+function loadDemoData() {
+  allData = generateDemoData(100);
+
+  // Update all controllers
+  searchController.updateData(allData);
+  filterController.updateData(allData);
+
+  // Render filters
+  filterController.renderControls('filterContainer');
+
+  // Initial display
+  updateDisplay();
+
+  console.log('✅ Demo data loaded:', allData.length, 'products');
+}
+
+// Setup search input
+Search.setupSearchInput('searchInput', allData, ['name', 'sku', 'category'], (results) => {
+  // Search updates the controller, we just need to update display
+  updateDisplay();
+}, { debounceDelay: 300 });
+
+// Subscribe to filter changes
+filterController.subscribe(() => {
+  updateDisplay();
+});
+
+// Subscribe to pagination changes
+paginator.subscribe(() => {
+  updateDisplay();
+});
+
+// Event delegation for action buttons
+document.getElementById('tableBody').addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-action]');
+  if (btn) {
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    alert(`Action: ${action} on Product ID: ${id}`);
+  }
+});
+
+// ============================================================================
+// TEST 2: FORMATTERS DEMO
+// ============================================================================
+
+const formatterDemoData = [
+  {
+    currency: 1234.56,
+    date: '2024-01-15',
+    datetime: '2024-01-15T14:30:00',
+    phone: '5551234567',
+    status: 'Active',
+    qty: 5,
+    reorderAt: 10,
+    isActive: true,
+    longText: 'This is a very long text that should be truncated when displayed in the table to avoid layout issues'
+  }
+];
+
+const formatterColumns = [
+  { key: 'currency', label: 'Currency', formatter: TableRenderer.formatters.currency },
+  { key: 'date', label: 'Date', formatter: TableRenderer.formatters.date },
+  { key: 'datetime', label: 'DateTime', formatter: TableRenderer.formatters.datetime },
+  { key: 'phone', label: 'Phone', formatter: TableRenderer.formatters.phone },
+  { key: 'status', label: 'Status', formatter: TableRenderer.formatters.status },
+  { key: 'qty', label: 'Quantity', formatter: TableRenderer.formatters.quantity },
+  { key: 'isActive', label: 'Active', formatter: TableRenderer.formatters.boolean },
+  { key: 'longText', label: 'Description', formatter: TableRenderer.formatters.truncate(40) }
+];
+
+TableRenderer.renderTableHeader('formattersHeader', formatterColumns);
+TableRenderer.renderTable('formattersBody', formatterDemoData, formatterColumns);
+
+// ============================================================================
+// AUTO-LOAD ON PAGE LOAD
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadDemoData();
+  console.log('✅ Table System Test loaded successfully');
+  console.log('📦 Available APIs:');
+  console.log('  - window.TableRenderer (renderTable, formatters, sortData)');
+  console.log('  - window.Search (searchData, setupSearchInput)');
+  console.log('  - window.Pagination (paginate, createPaginator)');
+  console.log('  - window.Filters (applyFilters, filterPresets)');
+});
+</script>
+</body>
+</html>
