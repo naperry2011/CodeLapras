@@ -314,3 +314,121 @@ dialog::backdrop {
   outline-offset: 2px;
   border-color: var(--accent);
 }
+
+/* =========================
+   FORM VALIDATION ERRORS
+   ========================= */
+
+/* Error state for form fields */
+.field-error,
+input.field-error,
+textarea.field-error,
+select.field-error {
+  border-color: #ff4757 !important;
+  background: rgba(255, 71, 87, 0.05) !important;
+  animation: fieldErrorShake 0.3s ease-in-out;
+}
+
+.field-error:focus {
+  outline-color: #ff4757 !important;
+  border-color: #ff4757 !important;
+}
+
+/* Error message below field */
+.error-message {
+  color: #ff4757;
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.3;
+}
+
+.error-message::before {
+  content: "⚠";
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Shake animation for error fields */
+@keyframes fieldErrorShake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+/* Success state for validated fields (optional) */
+.field-success,
+input.field-success,
+textarea.field-success,
+select.field-success {
+  border-color: #18d47b !important;
+  background: rgba(24, 212, 123, 0.03) !important;
+}
+
+.field-success:focus {
+  outline-color: #18d47b !important;
+  border-color: #18d47b !important;
+}
+
+/* Success message (optional) */
+.success-message {
+  color: #18d47b;
+  font-size: 13px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.success-message::before {
+  content: "✓";
+  font-weight: bold;
+}
+
+/* Form field wrapper for better spacing */
+.form-field {
+  position: relative;
+  margin-bottom: 14px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+  width: 100%;
+}
+
+/* Required field indicator */
+.form-field label.required::after,
+label.required::after {
+  content: " *";
+  color: #ff4757;
+  font-weight: bold;
+}
+
+/* Disabled field styling */
+input:disabled,
+textarea:disabled,
+select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: rgba(128, 128, 128, 0.1) !important;
+}
+
+/* Readonly field styling */
+input[readonly],
+textarea[readonly] {
+  background: rgba(128, 128, 128, 0.05) !important;
+  cursor: default;
+}
