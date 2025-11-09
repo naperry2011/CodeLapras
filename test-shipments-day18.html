@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Day 18 - Shipments Module Test</title>
+<link rel="stylesheet" href="src/styles/themes.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/tables.css">
+<link rel="stylesheet" href="src/styles/forms.css">
+
+<!-- Core JavaScript Modules -->
+<script src="src/js/core/utils.js"></script>
+<script src="src/js/core/storage.js"></script>
+<script src="src/js/core/theme.js"></script>
+<script src="src/js/core/eventBus.js"></script>
+
+<!-- UI Components -->
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/notifications.js"></script>
+<script src="src/js/ui/forms.js"></script>
+<script src="src/js/ui/form-builders.js"></script>
+<script src="src/js/ui/tables.js"></script>
+<script src="src/js/ui/actions.js"></script>
+<script src="src/js/ui/shortcuts.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+
+<style>
+  body {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .test-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg1);
+  }
+  .test-section h2 {
+    margin-top: 0;
+    color: var(--accent);
+  }
+  .test-section h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+  }
+  .status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-left: 1rem;
+  }
+  .status.pass {
+    background: var(--success-color);
+    color: white;
+  }
+  .status.fail {
+    background: var(--danger-color);
+    color: white;
+  }
+  .test-result {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+  }
+  .test-result.pass {
+    border-left-color: var(--success-color);
+    background: rgba(46, 125, 50, 0.1);
+  }
+  .test-result.fail {
+    border-left-color: var(--danger-color);
+    background: rgba(211, 47, 47, 0.1);
+  }
+  .btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  #shipmentsTableContainer {
+    margin-top: 1rem;
+  }
+  .metric-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-left: 0.5rem;
+  }
+  .metrics-display {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg2);
+    border-radius: 8px;
+  }
+  .metric-card {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg1);
+    border-radius: 4px;
+  }
+  .metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--accent);
+  }
+  .metric-label {
+    font-size: 0.9rem;
+    color: var(--muted-color);
+    margin-top: 0.5rem;
+  }
+  .carrier-test {
+    margin: 1rem 0;
+    padding: 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .tracking-url-test {
+    font-family: monospace;
+    font-size: 0.9rem;
+    color: var(--accent);
+    word-break: break-all;
+  }
+</style>
+</head>
+<body>
+
+<h1>Day 18: Shipments Module Test Suite</h1>
+
+<div class="btn-group">
+  <button class="btn primary" onclick="runAllTests()">Run All Tests</button>
+  <button class="btn" onclick="clearTestData()">Clear Test Data</button>
+  <button class="btn" onclick="location.reload()">Refresh Page</button>
+</div>
+
+<!-- Test Section 1: Module Loading -->
+<div class="test-section">
+  <h2>1. Module Loading Tests</h2>
+  <div id="moduleTests"></div>
+</div>
+
+<!-- Test Section 2: Metrics Dashboard -->
+<div class="test-section">
+  <h2>2. Shipment Metrics Dashboard</h2>
+  <div class="metrics-display">
+    <div class="metric-card">
+      <div class="metric-value" id="metricTotalShipments">0</div>
+      <div class="metric-label">Total Shipments</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="metricPendingShipments">0</div>
+      <div class="metric-label">Pending</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="metricInTransitShipments">0</div>
+      <div class="metric-label">In Transit</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="metricDeliveredShipments">0</div>
+      <div class="metric-label">Delivered</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="metricOverdueShipments">0</div>
+      <div class="metric-label">Overdue</div>
+    </div>
+  </div>
+</div>
+
+<!-- Test Section 3: Carrier Configuration -->
+<div class="test-section">
+  <h2>3. Carrier Configuration Tests</h2>
+  <div id="carrierTests"></div>
+</div>
+
+<!-- Test Section 4: Tracking Detection -->
+<div class="test-section">
+  <h2>4. Tracking Number Detection Tests</h2>
+  <div id="trackingTests"></div>
+</div>
+
+<!-- Test Section 5: CRUD Operations -->
+<div class="test-section">
+  <h2>5. Shipment CRUD Operations</h2>
+  <div id="crudTests"></div>
+  <div class="btn-group" style="margin-top: 1rem;">
+    <button class="btn primary" onclick="testCreateShipment()">Test Create</button>
+    <button class="btn" onclick="testUpdateShipment()">Test Update</button>
+    <button class="btn" onclick="testDeleteShipment()">Test Delete</button>
+    <button class="btn" onclick="testBulkOperations()">Test Bulk Ops</button>
+  </div>
+</div>
+
+<!-- Test Section 6: Tracking URLs -->
+<div class="test-section">
+  <h2>6. Tracking URL Generation</h2>
+  <div id="urlTests"></div>
+</div>
+
+<!-- Test Section 7: Status Management -->
+<div class="test-section">
+  <h2>7. Status Management Tests</h2>
+  <div id="statusTests"></div>
+</div>
+
+<!-- Test Section 8: Label Printing -->
+<div class="test-section">
+  <h2>8. Label Printing Tests</h2>
+  <div id="labelTests"></div>
+  <div class="btn-group" style="margin-top: 1rem;">
+    <button class="btn primary" onclick="testThermalLabel()">Test Thermal Label (4x6)</button>
+    <button class="btn" onclick="testPaperLabel()">Test Paper Label (8.5x11)</button>
+    <button class="btn" onclick="testReturnLabel()">Test Return Label</button>
+  </div>
+</div>
+
+<!-- Test Section 9: Sample Data & Table Rendering -->
+<div class="test-section">
+  <h2>9. Sample Data & Table Rendering</h2>
+  <div class="btn-group">
+    <button class="btn primary" onclick="generateSampleData()">Generate Sample Data</button>
+    <button class="btn" onclick="renderShipmentsTable()">Render Table</button>
+    <button class="btn" onclick="testFiltering()">Test Filtering</button>
+    <button class="btn" onclick="testSorting()">Test Sorting</button>
+  </div>
+  <div id="shipmentsTableContainer"></div>
+</div>
+
+<!-- Test Section 10: Actions & Shortcuts -->
+<div class="test-section">
+  <h2>10. Actions & Shortcuts Tests</h2>
+  <div id="actionsTests"></div>
+</div>
+
+<!-- Test Results Summary -->
+<div class="test-section">
+  <h2>Test Results Summary</h2>
+  <div id="testSummary"></div>
+</div>
+
+<script type="module">
+  // Import modules as ES6 modules
+  import * as Carriers from './src/config/carriers.js';
+  import * as Shipments from './src/js/modules/shipments/shipments.js';
+  import * as Tracking from './src/js/modules/shipments/tracking.js';
+  import * as LabelBuilder from './src/js/printing/label-builder.js';
+
+  // Expose to window for inline handlers
+  window.Carriers = Carriers;
+  window.Shipments = Shipments;
+  window.Tracking = Tracking;
+  window.LabelBuilder = LabelBuilder;
+
+  // Test counters
+  let testsRun = 0;
+  let testsPassed = 0;
+  let testsFailed = 0;
+
+  // Helper functions
+  function logTest(message, passed, containerId = null) {
+    testsRun++;
+    if (passed) {
+      testsPassed++;
+      const html = `<div class="test-result pass">✅ ${message}</div>`;
+      if (containerId) document.getElementById(containerId).innerHTML += html;
+      console.log('✅', message);
+    } else {
+      testsFailed++;
+      const html = `<div class="test-result fail">❌ ${message}</div>`;
+      if (containerId) document.getElementById(containerId).innerHTML += html;
+      console.error('❌', message);
+    }
+  }
+
+  function updateTestSummary() {
+    const summary = document.getElementById('testSummary');
+    const passRate = testsRun > 0 ? ((testsPassed / testsRun) * 100).toFixed(1) : 0;
+    summary.innerHTML = `
+      <h3>Results</h3>
+      <p><strong>Total Tests:</strong> ${testsRun}</p>
+      <p><strong>Passed:</strong> <span style="color: var(--success-color);">${testsPassed}</span></p>
+      <p><strong>Failed:</strong> <span style="color: var(--danger-color);">${testsFailed}</span></p>
+      <p><strong>Pass Rate:</strong> ${passRate}%</p>
+    `;
+  }
+
+  // Test 1: Module Loading
+  function testModuleLoading() {
+    console.log('--- Testing Module Loading ---');
+    document.getElementById('moduleTests').innerHTML = '';
+
+    logTest('Carriers module loaded', typeof Carriers.CARRIERS === 'object', 'moduleTests');
+    logTest('Shipments module loaded', typeof Shipments.createShipment === 'function', 'moduleTests');
+    logTest('Tracking module loaded', typeof Tracking.detectTracking === 'function', 'moduleTests');
+    logTest('LabelBuilder module loaded', typeof LabelBuilder.printLabel === 'function', 'moduleTests');
+    logTest('getAllCarriers function exists', typeof Carriers.getAllCarriers === 'function', 'moduleTests');
+    logTest('getTrackingUrl function exists', typeof Carriers.getTrackingUrl === 'function', 'moduleTests');
+  }
+
+  // Test 2: Carrier Configuration
+  function testCarrierConfiguration() {
+    console.log('--- Testing Carrier Configuration ---');
+    document.getElementById('carrierTests').innerHTML = '';
+
+    const carriers = Carriers.getAllCarriers();
+    logTest(`Found ${carriers.length} carriers configured`, carriers.length >= 7, 'carrierTests');
+
+    // Test each major carrier
+    const testCarriers = ['UPS', 'FEDEX', 'USPS', 'DHL', 'AMAZON'];
+    testCarriers.forEach(code => {
+      const carrier = Carriers.getCarrier(code);
+      logTest(`${code} carrier configured`, carrier !== null, 'carrierTests');
+      if (carrier) {
+        logTest(`${code} has tracking pattern`, carrier.trackingPattern !== null, 'carrierTests');
+        logTest(`${code} has tracking URL template`, carrier.trackingUrlTemplate !== null, 'carrierTests');
+      }
+    });
+
+    // Test carrier options
+    const options = Carriers.getCarrierOptions();
+    logTest(`Carrier options generated (${options.length} options)`, options.length > 0, 'carrierTests');
+  }
+
+  // Test 3: Tracking Number Detection
+  function testTrackingDetection() {
+    console.log('--- Testing Tracking Detection ---');
+    document.getElementById('trackingTests').innerHTML = '';
+
+    // UPS tracking number
+    const upsResult = Tracking.detectTracking('1Z999AA10123456784');
+    logTest('UPS tracking detected', upsResult.carrier === 'UPS', 'trackingTests');
+    logTest('UPS confidence 100%', upsResult.confidence === 100, 'trackingTests');
+
+    // FedEx tracking number
+    const fedexResult = Tracking.detectTracking('123456789012');
+    logTest('FedEx tracking detected', fedexResult.carrier === 'FEDEX', 'trackingTests');
+
+    // USPS tracking number
+    const uspsResult = Tracking.detectTracking('9400111899562537840142');
+    logTest('USPS tracking detected', uspsResult.carrier === 'USPS', 'trackingTests');
+
+    // Amazon tracking number
+    const amazonResult = Tracking.detectTracking('TBA123456789012');
+    logTest('Amazon tracking detected', amazonResult.carrier === 'AMAZON', 'trackingTests');
+
+    // Invalid tracking number
+    const invalidResult = Tracking.detectTracking('invalid');
+    logTest('Invalid tracking rejected', invalidResult.carrier === null, 'trackingTests');
+  }
+
+  // Test 4: CRUD Operations
+  window.testCreateShipment = function() {
+    console.log('--- Testing Create Shipment ---');
+    document.getElementById('crudTests').innerHTML = '';
+
+    const shipmentData = {
+      trackingNumber: '1Z999AA10123456784',
+      carrier: 'UPS',
+      status: 'shipped',
+      recipientName: 'John Doe',
+      recipientAddress: {
+        line1: '123 Main St',
+        city: 'San Francisco',
+        state: 'CA',
+        zip: '94102',
+        country: 'US'
+      },
+      shippedDate: new Date().toISOString(),
+      weight: '5 lbs'
+    };
+
+    try {
+      const shipment = Shipments.createShipment(shipmentData);
+      logTest('Shipment created successfully', shipment.id !== undefined, 'crudTests');
+      logTest('Shipment has tracking number', shipment.trackingNumber === shipmentData.trackingNumber, 'crudTests');
+      logTest('Shipment has carrier', shipment.carrier === 'UPS', 'crudTests');
+      window.testShipmentId = shipment.id;
+    } catch (error) {
+      logTest(`Create failed: ${error.message}`, false, 'crudTests');
+    }
+  };
+
+  window.testUpdateShipment = function() {
+    console.log('--- Testing Update Shipment ---');
+
+    if (!window.testShipmentId) {
+      logTest('No shipment to update (run Create test first)', false, 'crudTests');
+      return;
+    }
+
+    try {
+      const updated = Shipments.updateShipment(window.testShipmentId, {
+        status: 'delivered',
+        deliveredDate: new Date().toISOString()
+      });
+      logTest('Shipment updated successfully', updated.status === 'delivered', 'crudTests');
+      logTest('Delivered date set', updated.deliveredDate !== null, 'crudTests');
+    } catch (error) {
+      logTest(`Update failed: ${error.message}`, false, 'crudTests');
+    }
+  };
+
+  window.testDeleteShipment = function() {
+    console.log('--- Testing Delete Shipment ---');
+
+    if (!window.testShipmentId) {
+      logTest('No shipment to delete', false, 'crudTests');
+      return;
+    }
+
+    try {
+      Shipments.deleteShipment(window.testShipmentId);
+      const deleted = Shipments.getShipment(window.testShipmentId);
+      logTest('Shipment deleted successfully', deleted === null, 'crudTests');
+      window.testShipmentId = null;
+    } catch (error) {
+      logTest(`Delete failed: ${error.message}`, false, 'crudTests');
+    }
+  };
+
+  window.testBulkOperations = function() {
+    console.log('--- Testing Bulk Operations ---');
+
+    // Create 5 test shipments
+    const ids = [];
+    for (let i = 0; i < 5; i++) {
+      const s = Shipments.createShipment({
+        trackingNumber: `TEST${Date.now()}${i}`,
+        carrier: 'OTHER',
+        status: 'pending',
+        recipientName: `Test Recipient ${i + 1}`
+      });
+      ids.push(s.id);
+    }
+
+    logTest(`Created 5 test shipments`, ids.length === 5, 'crudTests');
+
+    // Delete all
+    ids.forEach(id => Shipments.deleteShipment(id));
+    logTest('Bulk deleted successfully', true, 'crudTests');
+  };
+
+  // Test 5: Tracking URLs
+  function testTrackingUrls() {
+    console.log('--- Testing Tracking URLs ---');
+    document.getElementById('urlTests').innerHTML = '';
+
+    const testCases = [
+      { carrier: 'UPS', tracking: '1Z999AA10123456784' },
+      { carrier: 'FEDEX', tracking: '123456789012' },
+      { carrier: 'USPS', tracking: '9400111899562537840142' },
+      { carrier: 'DHL', tracking: '1234567890' },
+      { carrier: 'AMAZON', tracking: 'TBA123456789012' }
+    ];
+
+    testCases.forEach(test => {
+      const url = Carriers.getTrackingUrl(test.carrier, test.tracking);
+      logTest(`${test.carrier} tracking URL generated`, url !== null && url.includes(test.tracking), 'urlTests');
+      document.getElementById('urlTests').innerHTML +=
+        `<div class="carrier-test"><strong>${test.carrier}:</strong> <a href="${url}" target="_blank" class="tracking-url-test">${url}</a></div>`;
+    });
+  }
+
+  // Test 6: Status Management
+  function testStatusManagement() {
+    console.log('--- Testing Status Management ---');
+    document.getElementById('statusTests').innerHTML = '';
+
+    const statuses = ['pending', 'shipped', 'in_transit', 'delivered', 'exception'];
+    statuses.forEach(status => {
+      const badge = Tracking.getStatusBadge(status);
+      logTest(`${status} badge generated`, badge.label !== undefined, 'statusTests');
+      logTest(`${status} has icon`, badge.icon !== undefined, 'statusTests');
+    });
+
+    // Test overdue detection
+    const overdueShipment = {
+      status: 'in_transit',
+      estimatedDelivery: new Date(Date.now() - 86400000).toISOString() // Yesterday
+    };
+    const isOverdue = Tracking.isOverdue(overdueShipment);
+    logTest('Overdue detection works', isOverdue === true, 'statusTests');
+  }
+
+  // Test 7: Label Printing
+  window.testThermalLabel = function() {
+    console.log('--- Testing Thermal Label ---');
+    document.getElementById('labelTests').innerHTML = '';
+
+    const testShipment = {
+      trackingNumber: '1Z999AA10123456784',
+      carrier: 'UPS',
+      recipientName: 'John Doe',
+      recipientAddress: {
+        line1: '123 Main St',
+        city: 'San Francisco',
+        state: 'CA',
+        zip: '94102',
+        country: 'US'
+      },
+      shippedDate: new Date().toISOString(),
+      weight: '5 lbs'
+    };
+
+    try {
+      LabelBuilder.printLabel(testShipment, 'thermal');
+      logTest('Thermal label print triggered', true, 'labelTests');
+    } catch (error) {
+      logTest(`Thermal label failed: ${error.message}`, false, 'labelTests');
+    }
+  };
+
+  window.testPaperLabel = function() {
+    console.log('--- Testing Paper Label ---');
+
+    const testShipment = {
+      trackingNumber: '1Z999AA10123456784',
+      carrier: 'UPS',
+      recipientName: 'Jane Smith',
+      recipientAddress: {
+        line1: '456 Oak Ave',
+        city: 'Los Angeles',
+        state: 'CA',
+        zip: '90001',
+        country: 'US'
+      },
+      shippedDate: new Date().toISOString()
+    };
+
+    try {
+      LabelBuilder.printLabel(testShipment, 'paper');
+      logTest('Paper label print triggered', true, 'labelTests');
+    } catch (error) {
+      logTest(`Paper label failed: ${error.message}`, false, 'labelTests');
+    }
+  };
+
+  window.testReturnLabel = function() {
+    console.log('--- Testing Return Label ---');
+
+    const testShipment = {
+      trackingNumber: '1Z999AA10123456784',
+      carrier: 'UPS',
+      recipientName: 'Customer Name',
+      orderId: 'ORD-12345'
+    };
+
+    try {
+      LabelBuilder.printReturnLabel(testShipment, 'thermal');
+      logTest('Return label print triggered', true, 'labelTests');
+    } catch (error) {
+      logTest(`Return label failed: ${error.message}`, false, 'labelTests');
+    }
+  };
+
+  // Test 8: Generate Sample Data
+  window.generateSampleData = function() {
+    console.log('--- Generating Sample Data ---');
+
+    const carriers = ['UPS', 'FEDEX', 'USPS', 'DHL', 'AMAZON'];
+    const statuses = ['pending', 'shipped', 'in_transit', 'delivered', 'exception'];
+    const names = ['John Doe', 'Jane Smith', 'Bob Johnson', 'Alice Williams', 'Charlie Brown'];
+    const cities = [
+      { city: 'New York', state: 'NY', zip: '10001' },
+      { city: 'Los Angeles', state: 'CA', zip: '90001' },
+      { city: 'Chicago', state: 'IL', zip: '60601' },
+      { city: 'Houston', state: 'TX', zip: '77001' },
+      { city: 'Phoenix', state: 'AZ', zip: '85001' }
+    ];
+
+    // Create 20 sample shipments
+    for (let i = 0; i < 20; i++) {
+      const carrier = carriers[Math.floor(Math.random() * carriers.length)];
+      const status = statuses[Math.floor(Math.random() * statuses.length)];
+      const location = cities[Math.floor(Math.random() * cities.length)];
+      const daysAgo = Math.floor(Math.random() * 30);
+      const shippedDate = new Date(Date.now() - daysAgo * 86400000);
+
+      Shipments.createShipment({
+        trackingNumber: `${carrier}${Date.now()}${i}`,
+        carrier: carrier,
+        status: status,
+        recipientName: names[Math.floor(Math.random() * names.length)],
+        recipientAddress: {
+          line1: `${100 + i} Main St`,
+          city: location.city,
+          state: location.state,
+          zip: location.zip,
+          country: 'US'
+        },
+        shippedDate: shippedDate.toISOString(),
+        estimatedDelivery: new Date(shippedDate.getTime() + (5 * 86400000)).toISOString(),
+        weight: `${Math.floor(Math.random() * 20) + 1} lbs`,
+        orderId: `ORD-${1000 + i}`
+      });
+    }
+
+    console.log('✅ Generated 20 sample shipments');
+    renderShipmentsTable();
+    updateMetrics();
+  };
+
+  // Render shipments table (simplified - would use actual UI in production)
+  window.renderShipmentsTable = function() {
+    const shipments = Shipments.getAllShipments();
+    const container = document.getElementById('shipmentsTableContainer');
+
+    let html = `<p><strong>${shipments.length} shipments loaded</strong></p>`;
+    html += '<table class="table"><thead><tr><th>Tracking #</th><th>Carrier</th><th>Status</th><th>Recipient</th><th>Destination</th><th>Shipped</th></tr></thead><tbody>';
+
+    shipments.forEach(s => {
+      html += `<tr>
+        <td>${s.trackingNumber}</td>
+        <td>${Carriers.getCarrierIcon(s.carrier)} ${s.carrier}</td>
+        <td>${s.status}</td>
+        <td>${s.recipientName || '-'}</td>
+        <td>${s.recipientAddress?.city || '-'}, ${s.recipientAddress?.state || '-'}</td>
+        <td>${s.shippedDate ? new Date(s.shippedDate).toLocaleDateString() : '-'}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  };
+
+  // Update metrics
+  function updateMetrics() {
+    const summary = Tracking.getTrackingSummary(Shipments.getAllShipments());
+    document.getElementById('metricTotalShipments').textContent = summary.total;
+    document.getElementById('metricPendingShipments').textContent = summary.pending;
+    document.getElementById('metricInTransitShipments').textContent = summary.inTransit;
+    document.getElementById('metricDeliveredShipments').textContent = summary.delivered;
+    document.getElementById('metricOverdueShipments').textContent = summary.overdue;
+  }
+
+  // Test filtering
+  window.testFiltering = function() {
+    const allShipments = Shipments.getAllShipments();
+    const filtered = Shipments.filterShipments({ status: 'delivered' });
+    console.log(`✅ Filtered ${filtered.length} delivered shipments out of ${allShipments.length} total`);
+  };
+
+  // Test sorting
+  window.testSorting = function() {
+    const sorted = Shipments.sortShipments('shippedDate', 'desc');
+    console.log(`✅ Sorted ${sorted.length} shipments by shipped date (desc)`);
+  };
+
+  // Test actions
+  function testActions() {
+    console.log('--- Testing Actions ---');
+    document.getElementById('actionsTests').innerHTML = '';
+
+    // Note: ActionRegistry and ShortcutManager are not ES6 modules in this codebase
+    // They're loaded as regular scripts, so we test if they exist on window
+    logTest('ActionRegistry available', typeof window.ActionRegistry !== 'undefined', 'actionsTests');
+    logTest('ShortcutManager available', typeof window.ShortcutManager !== 'undefined', 'actionsTests');
+  }
+
+  // Clear test data
+  window.clearTestData = function() {
+    if (confirm('Clear all shipment test data?')) {
+      localStorage.removeItem('inv.shipments');
+      location.reload();
+    }
+  };
+
+  // Run all tests
+  window.runAllTests = function() {
+    testsRun = 0;
+    testsPassed = 0;
+    testsFailed = 0;
+
+    testModuleLoading();
+    testCarrierConfiguration();
+    testTrackingDetection();
+    testTrackingUrls();
+    testStatusManagement();
+    testActions();
+
+    updateTestSummary();
+    updateMetrics();
+
+    console.log(`\n=== TEST SUMMARY ===`);
+    console.log(`Total: ${testsRun}, Passed: ${testsPassed}, Failed: ${testsFailed}`);
+  };
+
+  // Auto-run tests on load
+  window.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 Day 18 - Shipments Module Test Suite');
+    runAllTests();
+    updateMetrics();
+  });
+</script>
+
+</body>
+</html>

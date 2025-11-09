@@ -73,6 +73,14 @@
 <script src="src/js/modules/subscriptions/subscription-ui.js"></script>
 <script src="src/js/modules/subscriptions/subscription-actions.js"></script>
 
+<!-- Shipments Module -->
+<script type="module" src="src/config/carriers.js"></script>
+<script type="module" src="src/js/modules/shipments/shipments.js"></script>
+<script type="module" src="src/js/modules/shipments/tracking.js"></script>
+<script type="module" src="src/js/modules/shipments/shipment-ui.js"></script>
+<script type="module" src="src/js/modules/shipments/shipment-actions.js"></script>
+<script type="module" src="src/js/printing/label-builder.js"></script>
+
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
   // CDN-backed loader (only used if local files are missing)
@@ -2692,6 +2700,130 @@
       </div>
     </section>
   </div>
+</dialog>
+
+<!-- Shipment Dialog -->
+<dialog id="shipmentDialog" class="dialog">
+  <div class="dlg-head">
+    <strong id="shipmentDialogTitle">New Shipment</strong>
+    <div class="toolbar">
+      <button class="btn small" id="btnSaveShipment">Save</button>
+      <button class="btn small" id="btnTrackPackage">Track</button>
+      <button class="btn small danger" id="btnDeleteShipment" style="display:none">Delete</button>
+      <button class="btn small" id="btnCancelShipment">Cancel</button>
+    </div>
+  </div>
+  <form id="shipmentForm">
+    <div class="dlg-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:12px">
+      <!-- Left Column: Shipment Details -->
+      <section class="card" style="margin:0">
+        <h3>Shipment Details</h3>
+        <div class="body">
+          <label class="field">Tracking Number *
+            <input type="text" id="shipmentTrackingNumber" required placeholder="Enter tracking number">
+          </label>
+          <label class="field">Carrier *
+            <select id="shipmentCarrier" required>
+              <option value="">Select Carrier</option>
+            </select>
+          </label>
+          <label class="field">Status
+            <select id="shipmentStatus">
+              <option value="pending">Pending</option>
+              <option value="shipped">Shipped</option>
+              <option value="in_transit">In Transit</option>
+              <option value="out_for_delivery">Out for Delivery</option>
+              <option value="delivered">Delivered</option>
+              <option value="exception">Exception</option>
+              <option value="returned">Returned</option>
+            </select>
+          </label>
+          <label class="field">Order ID
+            <input type="text" id="shipmentOrderId" placeholder="Optional order reference">
+          </label>
+          <label class="field">Invoice ID
+            <input type="text" id="shipmentInvoiceId" placeholder="Optional invoice reference">
+          </label>
+          <label class="field">Shipped Date
+            <input type="date" id="shipmentShippedDate">
+          </label>
+          <label class="field">Estimated Delivery
+            <input type="date" id="shipmentEstimatedDelivery">
+          </label>
+          <label class="field">Delivered Date
+            <input type="date" id="shipmentDeliveredDate">
+          </label>
+        </div>
+      </section>
+
+      <!-- Right Column: Recipient & Package Info -->
+      <section class="card" style="margin:0">
+        <h3>Recipient Information</h3>
+        <div class="body">
+          <label class="field">Name *
+            <input type="text" id="shipmentRecipientName" required placeholder="Recipient name">
+          </label>
+          <label class="field">Phone
+            <input type="tel" id="shipmentRecipientPhone" placeholder="Phone number">
+          </label>
+          <label class="field">Email
+            <input type="email" id="shipmentRecipientEmail" placeholder="Email address">
+          </label>
+          <label class="field">Address Line 1
+            <input type="text" id="shipmentAddressLine1" placeholder="Street address">
+          </label>
+          <label class="field">Address Line 2
+            <input type="text" id="shipmentAddressLine2" placeholder="Apt, suite, etc.">
+          </label>
+          <div class="row">
+            <label class="field">City
+              <input type="text" id="shipmentCity" placeholder="City">
+            </label>
+            <label class="field">State
+              <input type="text" id="shipmentState" placeholder="State">
+            </label>
+          </div>
+          <div class="row">
+            <label class="field">ZIP
+              <input type="text" id="shipmentZip" placeholder="ZIP code">
+            </label>
+            <label class="field">Country
+              <input type="text" id="shipmentCountry" value="US" placeholder="Country">
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <!-- Full Width: Package Details & Notes -->
+      <section class="card" style="margin:0; grid-column: 1 / -1">
+        <h3>Package Details</h3>
+        <div class="body">
+          <div class="row">
+            <label class="field">Weight
+              <input type="text" id="shipmentWeight" placeholder="e.g., 5 lbs">
+            </label>
+            <label class="field">Dimensions
+              <input type="text" id="shipmentDimensions" placeholder="e.g., 10x8x6 inches">
+            </label>
+            <label class="field">Service Level
+              <input type="text" id="shipmentServiceLevel" placeholder="e.g., Ground, Express">
+            </label>
+          </div>
+          <div class="row">
+            <label class="field">Shipping Cost
+              <input type="number" id="shipmentShippingCost" min="0" step="0.01" placeholder="0.00">
+            </label>
+            <label class="field">Insurance Value
+              <input type="number" id="shipmentInsuranceValue" min="0" step="0.01" placeholder="0.00">
+            </label>
+          </div>
+          <label class="field">Notes
+            <textarea id="shipmentNotes" rows="3" placeholder="Additional notes or instructions"></textarea>
+          </label>
+        </div>
+      </section>
+    </div>
+  </form>
 </dialog>
 
 <!-- Calendar Event Dialog -->
