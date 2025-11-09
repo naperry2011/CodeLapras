@@ -63,6 +63,11 @@
 <script src="src/js/modules/customers/customer-ui.js"></script>
 <script src="src/js/modules/customers/customer-actions.js"></script>
 
+<!-- Rentals Module -->
+<script src="src/js/modules/rentals/rentals.js"></script>
+<script src="src/js/modules/rentals/rental-ui.js"></script>
+<script src="src/js/modules/rentals/rental-actions.js"></script>
+
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
   // CDN-backed loader (only used if local files are missing)
@@ -6729,6 +6734,145 @@ renderKits();
       <div class="btn-group">
         <button type="submit" class="btn" style="background: var(--accent)">Save Order</button>
         <button type="button" class="btn" onclick="OrderUI.closeOrderDialog()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Rental Dialog -->
+<div id="rentalDialog" class="dialog" style="display: none;">
+  <div class="dialogContent" style="max-width: 900px;">
+    <div class="dialog-header">
+      <h2 id="rentalDialogTitle" class="dialog-title">New Rental</h2>
+      <button class="btn" onclick="hideDialog('#rentalDialog')" title="Close">✕</button>
+    </div>
+
+    <form id="rentalForm" onsubmit="event.preventDefault(); ActionRegistry.execute('save-rental');">
+      <!-- Hidden ID field -->
+      <input type="hidden" id="rentalId">
+
+      <!-- Customer Information -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Customer Information</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalCustomer">Customer Name *</label>
+            <input type="text" id="rentalCustomer" class="field" placeholder="Enter customer name" required>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalCustomerId">Select Customer</label>
+            <select id="rentalCustomerId" class="field">
+              <option value="">-- Select Customer --</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Equipment Information -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Equipment Information</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 2">
+            <label for="rentalEquipment">Equipment/Product *</label>
+            <input type="text" id="rentalEquipment" class="field" placeholder="Enter equipment name" required>
+          </div>
+
+          <div class="form-group" style="flex: 2">
+            <label for="rentalEquipmentId">Select Product</label>
+            <select id="rentalEquipmentId" class="field">
+              <option value="">-- Select Product --</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalQty">Quantity *</label>
+            <input type="number" id="rentalQty" class="field" min="1" value="1" required>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Rental Period -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Rental Period</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalStartDate">Start Date *</label>
+            <input type="date" id="rentalStartDate" class="field" required>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalDueDate">Due Date *</label>
+            <input type="date" id="rentalDueDate" class="field" required>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalReturnDate">Return Date</label>
+            <input type="date" id="rentalReturnDate" class="field">
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Fees & Payments -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Fees & Payments</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalFee">Rental Fee *</label>
+            <input type="number" id="rentalFee" class="field" step="0.01" min="0" value="0" required>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalDeposit">Deposit</label>
+            <input type="number" id="rentalDeposit" class="field" step="0.01" min="0" value="0">
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalPaid">Amount Paid</label>
+            <input type="number" id="rentalPaid" class="field" step="0.01" min="0" value="0">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalPayDate">Payment Date</label>
+            <input type="date" id="rentalPayDate" class="field">
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalLateFee">Late Fee</label>
+            <input type="number" id="rentalLateFee" class="field" step="0.01" min="0" value="0" readonly>
+            <small style="color: var(--muted-color);">Auto-calculated on return</small>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="rentalStatus">Status</label>
+            <select id="rentalStatus" class="field">
+              <option value="active">Active</option>
+              <option value="overdue">Overdue</option>
+              <option value="returned">Returned</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <!-- Additional Information -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Additional Information</legend>
+
+        <div class="form-group">
+          <label for="rentalNotes">Notes</label>
+          <textarea id="rentalNotes" class="field" rows="3" placeholder="Optional notes about this rental"></textarea>
+        </div>
+      </fieldset>
+
+      <div class="btn-group">
+        <button type="submit" class="btn" style="background: var(--accent)">Save Rental</button>
+        <button type="button" class="btn" onclick="hideDialog('#rentalDialog')">Cancel</button>
       </div>
     </form>
   </div>

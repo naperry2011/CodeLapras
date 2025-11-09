@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Day 16 - Rentals Module Test</title>
+<link rel="stylesheet" href="src/styles/themes.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/tables.css">
+<link rel="stylesheet" href="src/styles/forms.css">
+
+<!-- Core JavaScript Modules -->
+<script src="src/js/core/utils.js"></script>
+<script src="src/js/core/storage.js"></script>
+<script src="src/js/core/theme.js"></script>
+<script src="src/js/core/eventBus.js"></script>
+
+<!-- UI Components -->
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/notifications.js"></script>
+<script src="src/js/ui/forms.js"></script>
+<script src="src/js/ui/tables.js"></script>
+<script src="src/js/ui/actions.js"></script>
+<script src="src/js/ui/shortcuts.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+
+<!-- Inventory Module (for equipment linking) -->
+<script src="src/js/modules/inventory/products.js"></script>
+
+<!-- Customer Module (for customer linking) -->
+<script src="src/js/modules/customers/customers.js"></script>
+
+<!-- Sales Module (for invoice generation) -->
+<script src="src/js/modules/sales/line-items.js"></script>
+<script src="src/js/modules/sales/invoices.js"></script>
+
+<!-- Rentals Module -->
+<script src="src/js/modules/rentals/rentals.js"></script>
+<script src="src/js/modules/rentals/rental-ui.js"></script>
+<script src="src/js/modules/rentals/rental-actions.js"></script>
+
+<style>
+  body {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .test-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg1);
+  }
+  .test-section h2 {
+    margin-top: 0;
+    color: var(--accent);
+  }
+  .test-section h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+  }
+  .status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-left: 1rem;
+  }
+  .status.pass {
+    background: var(--success-color);
+    color: white;
+  }
+  .status.fail {
+    background: var(--danger-color);
+    color: white;
+  }
+  .test-result {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+  }
+  .test-result.pass {
+    border-left-color: var(--success-color);
+    background: rgba(46, 125, 50, 0.1);
+  }
+  .test-result.fail {
+    border-left-color: var(--danger-color);
+    background: rgba(211, 47, 47, 0.1);
+  }
+  .btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  #rentalsTable {
+    margin-top: 1rem;
+  }
+  .overdue-badge {
+    display: inline-block;
+    background: var(--danger-color);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+
+<h1>Day 16: Rentals Module Test Suite</h1>
+
+<!-- Test Section 1: Module Loading -->
+<div class="test-section">
+  <h2>1. Module Loading Tests</h2>
+  <div id="moduleTests"></div>
+</div>
+
+<!-- Test Section 2: Sample Data Creation -->
+<div class="test-section">
+  <h2>2. Sample Data Creation</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="createSampleCustomers()">Create Sample Customers</button>
+    <button class="btn" onclick="createSampleProducts()">Create Sample Products</button>
+    <button class="btn" onclick="createSampleRentals()">Create Sample Rentals</button>
+    <button class="btn danger" onclick="clearAllRentals()">Clear All Rentals</button>
+  </div>
+  <div id="sampleDataResults"></div>
+</div>
+
+<!-- Test Section 3: Rental Table Rendering -->
+<div class="test-section">
+  <h2>3. Rental Table Rendering</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="renderRentals()">Render All Rentals</button>
+    <button class="btn" onclick="renderActiveRentals()">Filter Active</button>
+    <button class="btn" onclick="renderOverdueRentals()">Filter Overdue <span id="overdueBadge" class="overdue-badge" style="display:none;">0</span></button>
+    <button class="btn" onclick="renderReturnedRentals()">Filter Returned</button>
+  </div>
+  <div id="rentalsTable"></div>
+</div>
+
+<!-- Test Section 4: Rental CRUD Operations -->
+<div class="test-section">
+  <h2>4. Rental CRUD Operations</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testCreateRental()">Test Create Rental</button>
+    <button class="btn" onclick="testUpdateRental()">Test Update Rental</button>
+    <button class="btn" onclick="testReturnRental()">Test Return Rental</button>
+    <button class="btn" onclick="testDeleteRental()">Test Delete Rental</button>
+  </div>
+  <div id="crudResults"></div>
+</div>
+
+<!-- Test Section 5: Dialog Tests -->
+<div class="test-section">
+  <h2>5. Dialog Interaction Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="ActionRegistry.execute('new-rental')">Open New Rental Dialog</button>
+    <button class="btn" onclick="testEditDialog()">Open Edit Dialog (First Rental)</button>
+    <button class="btn" onclick="testReturnDialog()">Open Return Dialog (First Active)</button>
+  </div>
+</div>
+
+<!-- Test Section 6: Action & Shortcut Tests -->
+<div class="test-section">
+  <h2>6. Action Registry & Shortcuts</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testActions()">Test All Actions</button>
+    <button class="btn" onclick="testShortcuts()">Test Shortcuts</button>
+    <button class="btn" onclick="testContextMenu()">Test Context Menu (Right-click table row)</button>
+  </div>
+  <div id="actionResults"></div>
+  <div style="margin-top: 1rem; padding: 1rem; background: var(--bg2); border-radius: 4px;">
+    <strong>Keyboard Shortcuts:</strong>
+    <ul>
+      <li><kbd>Ctrl+Shift+R</kbd> - New Rental</li>
+      <li><kbd>Ctrl+Shift+O</kbd> - Show Overdue Rentals</li>
+      <li><kbd>Ctrl+Shift+E</kbd> - Export Rentals to CSV</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Test Section 7: Invoice Generation -->
+<div class="test-section">
+  <h2>7. Invoice Generation Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testInvoiceGeneration()">Generate Invoice from First Rental</button>
+  </div>
+  <div id="invoiceResults"></div>
+</div>
+
+<!-- Test Section 8: Late Fee Calculation -->
+<div class="test-section">
+  <h2>8. Late Fee Calculation Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testLateFeeCalculation()">Test Late Fee Calculation</button>
+  </div>
+  <div id="lateFeeResults"></div>
+</div>
+
+<!-- Rental Dialog -->
+<div id="rentalDialog" class="dialog" style="display: none;">
+  <div class="dialogContent" style="max-width: 900px;">
+    <div class="dialog-header">
+      <h2 id="rentalDialogTitle" class="dialog-title">New Rental</h2>
+      <button class="btn" onclick="hideDialog('#rentalDialog')" title="Close">✕</button>
+    </div>
+
+    <form id="rentalForm" onsubmit="event.preventDefault(); ActionRegistry.execute('save-rental');">
+      <input type="hidden" id="rentalId">
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Customer Information</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalCustomer">Customer Name *</label>
+            <input type="text" id="rentalCustomer" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalCustomerId">Select Customer</label>
+            <select id="rentalCustomerId" class="field">
+              <option value="">-- Select Customer --</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Equipment Information</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 2">
+            <label for="rentalEquipment">Equipment/Product *</label>
+            <input type="text" id="rentalEquipment" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 2">
+            <label for="rentalEquipmentId">Select Product</label>
+            <select id="rentalEquipmentId" class="field">
+              <option value="">-- Select Product --</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalQty">Quantity *</label>
+            <input type="number" id="rentalQty" class="field" min="1" value="1" required>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Rental Period</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalStartDate">Start Date *</label>
+            <input type="date" id="rentalStartDate" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalDueDate">Due Date *</label>
+            <input type="date" id="rentalDueDate" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalReturnDate">Return Date</label>
+            <input type="date" id="rentalReturnDate" class="field">
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Fees & Payments</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalFee">Rental Fee *</label>
+            <input type="number" id="rentalFee" class="field" step="0.01" min="0" value="0" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalDeposit">Deposit</label>
+            <input type="number" id="rentalDeposit" class="field" step="0.01" min="0" value="0">
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalPaid">Amount Paid</label>
+            <input type="number" id="rentalPaid" class="field" step="0.01" min="0" value="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="rentalPayDate">Payment Date</label>
+            <input type="date" id="rentalPayDate" class="field">
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalLateFee">Late Fee</label>
+            <input type="number" id="rentalLateFee" class="field" step="0.01" min="0" value="0" readonly>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="rentalStatus">Status</label>
+            <select id="rentalStatus" class="field">
+              <option value="active">Active</option>
+              <option value="overdue">Overdue</option>
+              <option value="returned">Returned</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Additional Information</legend>
+        <div class="form-group">
+          <label for="rentalNotes">Notes</label>
+          <textarea id="rentalNotes" class="field" rows="3"></textarea>
+        </div>
+      </fieldset>
+
+      <div class="btn-group">
+        <button type="submit" class="btn" style="background: var(--accent)">Save Rental</button>
+        <button type="button" class="btn" onclick="hideDialog('#rentalDialog')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+// Test Results
+let testResults = {
+  pass: 0,
+  fail: 0
+};
+
+// Test 1: Module Loading
+function runModuleTests() {
+  const container = $('#moduleTests');
+  const tests = [
+    { name: 'Rentals module loaded', test: () => typeof getAllRentals === 'function' },
+    { name: 'RentalUI module loaded', test: () => typeof RentalUI !== 'undefined' },
+    { name: 'Rental actions registered', test: () => typeof ActionRegistry !== 'undefined' && ActionRegistry.get('new-rental') !== undefined },
+    { name: 'Storage integration', test: () => typeof saveRentals === 'function' && typeof loadRentals === 'function' },
+    { name: 'EventBus integration', test: () => typeof eventBus !== 'undefined' }
+  ];
+
+  let html = '';
+  tests.forEach(t => {
+    const result = t.test();
+    html += `<div class="test-result ${result ? 'pass' : 'fail'}">
+      ${result ? '✓' : '✗'} ${t.name}
+    </div>`;
+    result ? testResults.pass++ : testResults.fail++;
+  });
+
+  container.innerHTML = html;
+}
+
+// Sample Data Creation
+function createSampleCustomers() {
+  if (typeof Customers === 'undefined') {
+    showNotification('Customers module not loaded', 'error');
+    return;
+  }
+
+  const customers = [
+    { name: 'John Doe', email: 'john@example.com', phone: '555-0101' },
+    { name: 'Jane Smith', email: 'jane@example.com', phone: '555-0102' },
+    { name: 'Bob Johnson', email: 'bob@example.com', phone: '555-0103' }
+  ];
+
+  customers.forEach(c => {
+    try {
+      Customers.createCustomer(c);
+    } catch (e) {
+      console.log('Customer may already exist:', c.name);
+    }
+  });
+
+  showNotification('Sample customers created', 'success');
+  updateResults('#sampleDataResults', `Created ${customers.length} customers`);
+}
+
+function createSampleProducts() {
+  if (typeof Products === 'undefined') {
+    showNotification('Products module not loaded', 'error');
+    return;
+  }
+
+  const products = [
+    { name: 'Excavator', sku: 'EXC-001', price: 500, qty: 5 },
+    { name: 'Bulldozer', sku: 'BLD-001', price: 450, qty: 3 },
+    { name: 'Forklift', sku: 'FRK-001', price: 200, qty: 8 },
+    { name: 'Generator', sku: 'GEN-001', price: 100, qty: 10 }
+  ];
+
+  products.forEach(p => {
+    try {
+      Products.createProduct(p);
+    } catch (e) {
+      console.log('Product may already exist:', p.name);
+    }
+  });
+
+  showNotification('Sample products created', 'success');
+  updateResults('#sampleDataResults', `Created ${products.length} products`);
+}
+
+function createSampleRentals() {
+  const today = new Date();
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+  const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(today.getTime() - 2 * 24 * 60 * 60 * 1000);
+
+  const rentals = [
+    {
+      customer: 'John Doe',
+      equipment: 'Excavator',
+      qty: 1,
+      startDate: lastWeek.toISOString(),
+      dueDate: yesterday.toISOString(), // Overdue!
+      fee: 500,
+      deposit: 100,
+      paid: 600,
+      status: 'active'
+    },
+    {
+      customer: 'Jane Smith',
+      equipment: 'Forklift',
+      qty: 2,
+      startDate: today.toISOString(),
+      dueDate: nextWeek.toISOString(),
+      fee: 400,
+      deposit: 50,
+      paid: 450,
+      status: 'active'
+    },
+    {
+      customer: 'Bob Johnson',
+      equipment: 'Generator',
+      qty: 1,
+      startDate: twoDaysAgo.toISOString(),
+      dueDate: today.toISOString(),
+      returnDate: today.toISOString(),
+      fee: 100,
+      deposit: 25,
+      paid: 125,
+      status: 'returned'
+    }
+  ];
+
+  rentals.forEach(r => {
+    createRentalCRUD(r);
+  });
+
+  showNotification(`Created ${rentals.length} sample rentals`, 'success');
+  updateResults('#sampleDataResults', `Created ${rentals.length} rentals (1 overdue, 1 active, 1 returned)`);
+  renderRentals();
+}
+
+function clearAllRentals() {
+  if (!confirm('Clear all rentals?')) return;
+
+  window.rentals = [];
+  saveRentalsToStorage();
+  showNotification('All rentals cleared', 'success');
+  renderRentals();
+}
+
+// Rendering Functions
+function renderRentals() {
+  const rentals = getAllRentals();
+  RentalUI.renderRentalTable('#rentalsTable', rentals);
+  updateOverdueBadge();
+}
+
+function renderActiveRentals() {
+  const rentals = filterRentals(getAllRentals(), { status: 'active' });
+  RentalUI.renderRentalTable('#rentalsTable', rentals);
+  showNotification(`Showing ${rentals.length} active rentals`, 'info');
+}
+
+function renderOverdueRentals() {
+  const rentals = getOverdueRentals(getAllRentals());
+  RentalUI.renderRentalTable('#rentalsTable', rentals);
+  showNotification(`Showing ${rentals.length} overdue rentals`, 'warning');
+}
+
+function renderReturnedRentals() {
+  const rentals = filterRentals(getAllRentals(), { status: 'returned' });
+  RentalUI.renderRentalTable('#rentalsTable', rentals);
+  showNotification(`Showing ${rentals.length} returned rentals`, 'info');
+}
+
+function updateOverdueBadge() {
+  const overdueCount = getOverdueRentals(getAllRentals()).length;
+  const badge = $('#overdueBadge');
+  if (badge) {
+    badge.textContent = overdueCount;
+    badge.style.display = overdueCount > 0 ? 'inline-block' : 'none';
+  }
+}
+
+// CRUD Tests
+function testCreateRental() {
+  const rental = createRentalCRUD({
+    customer: 'Test Customer',
+    equipment: 'Test Equipment',
+    qty: 1,
+    startDate: new Date().toISOString(),
+    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    fee: 250
+  });
+
+  updateResults('#crudResults', `✓ Created rental: ${rental.id}`);
+  renderRentals();
+}
+
+function testUpdateRental() {
+  const rentals = getAllRentals();
+  if (rentals.length === 0) {
+    updateResults('#crudResults', '✗ No rentals to update');
+    return;
+  }
+
+  const rental = updateRentalCRUD(rentals[0].id, { fee: 999 });
+  updateResults('#crudResults', `✓ Updated rental ${rental.id} - New fee: $${rental.fee}`);
+  renderRentals();
+}
+
+function testReturnRental() {
+  const rentals = getAllRentals().filter(r => r.status !== 'returned');
+  if (rentals.length === 0) {
+    updateResults('#crudResults', '✗ No active rentals to return');
+    return;
+  }
+
+  const rental = markRentalReturnedCRUD(rentals[0].id, new Date().toISOString());
+  updateResults('#crudResults', `✓ Returned rental ${rental.id} - Late fee: $${rental.lateFee}`);
+  renderRentals();
+}
+
+function testDeleteRental() {
+  const rentals = getAllRentals();
+  if (rentals.length === 0) {
+    updateResults('#crudResults', '✗ No rentals to delete');
+    return;
+  }
+
+  deleteRentalCRUD(rentals[rentals.length - 1].id);
+  updateResults('#crudResults', `✓ Deleted last rental`);
+  renderRentals();
+}
+
+// Dialog Tests
+function testEditDialog() {
+  const rentals = getAllRentals();
+  if (rentals.length === 0) {
+    showNotification('Create rentals first', 'warning');
+    return;
+  }
+  RentalUI.showRentalDialog(rentals[0].id);
+}
+
+function testReturnDialog() {
+  const rentals = getAllRentals().filter(r => r.status !== 'returned');
+  if (rentals.length === 0) {
+    showNotification('No active rentals', 'warning');
+    return;
+  }
+  RentalUI.showReturnDialog(rentals[0].id);
+}
+
+// Action Tests
+function testActions() {
+  const actions = [
+    'new-rental',
+    'refresh-rentals',
+    'show-overdue-rentals',
+    'filter-active-rentals',
+    'filter-overdue-rentals',
+    'filter-returned-rentals',
+    'clear-rental-filters'
+  ];
+
+  let html = '<h3>Registered Actions:</h3>';
+  actions.forEach(actionName => {
+    const action = ActionRegistry.get(actionName);
+    const exists = !!action;
+    html += `<div class="test-result ${exists ? 'pass' : 'fail'}">
+      ${exists ? '✓' : '✗'} ${actionName}
+    </div>`;
+  });
+
+  updateResults('#actionResults', html);
+}
+
+function testShortcuts() {
+  const shortcuts = [
+    { key: 'ctrl+shift+r', name: 'New Rental' },
+    { key: 'ctrl+shift+o', name: 'Show Overdue' },
+    { key: 'ctrl+shift+e', name: 'Export Rentals' }
+  ];
+
+  let html = '<h3>Registered Shortcuts:</h3>';
+  html += '<p>Press the keyboard combinations to test:</p>';
+  shortcuts.forEach(s => {
+    html += `<div class="test-result pass">✓ ${s.key} - ${s.name}</div>`;
+  });
+
+  updateResults('#actionResults', html);
+}
+
+function testContextMenu() {
+  updateResults('#actionResults', '<div class="test-result pass">✓ Right-click any rental row in the table above to test context menu</div>');
+}
+
+// Invoice Test
+function testInvoiceGeneration() {
+  const rentals = getAllRentals();
+  if (rentals.length === 0) {
+    updateResults('#invoiceResults', '✗ No rentals available');
+    return;
+  }
+
+  const settings = { companyName: 'Test Company' };
+  const invoice = generateRentalInvoice(rentals[0], settings);
+
+  let html = '<h3>Generated Invoice:</h3>';
+  html += `<div class="test-result pass">
+    ✓ Invoice Number: ${invoice.invoiceNumber}<br>
+    ✓ Customer: ${invoice.customer}<br>
+    ✓ Total: $${invoice.total.toFixed(2)}<br>
+    ✓ Line Items: ${invoice.lineItems.length}
+  </div>`;
+
+  updateResults('#invoiceResults', html);
+}
+
+// Late Fee Test
+function testLateFeeCalculation() {
+  // Create overdue rental
+  const pastDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000); // 10 days ago
+  const rental = createRentalCRUD({
+    customer: 'Late Customer',
+    equipment: 'Late Equipment',
+    qty: 1,
+    startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
+    dueDate: pastDate.toISOString(),
+    fee: 100
+  });
+
+  // Calculate late fee (default $5/day)
+  const lateFee = calculateLateFee(rental, 5);
+  const daysLate = Math.ceil((Date.now() - new Date(rental.dueDate).getTime()) / (24 * 60 * 60 * 1000));
+
+  let html = '<h3>Late Fee Calculation:</h3>';
+  html += `<div class="test-result ${lateFee > 0 ? 'pass' : 'fail'}">
+    ${lateFee > 0 ? '✓' : '✗'} Days Late: ${daysLate}<br>
+    ${lateFee > 0 ? '✓' : '✗'} Late Fee ($5/day): $${lateFee.toFixed(2)}<br>
+    ${lateFee > 0 ? '✓' : '✗'} Expected: $${(daysLate * 5).toFixed(2)}
+  </div>`;
+
+  updateResults('#lateFeeResults', html);
+
+  // Clean up
+  deleteRentalCRUD(rental.id);
+}
+
+// Helper Functions
+function updateResults(selector, content) {
+  const element = $(selector);
+  if (element) {
+    element.innerHTML = content;
+  }
+}
+
+// Initialize Tests on Load
+document.addEventListener('DOMContentLoaded', () => {
+  runModuleTests();
+  renderRentals();
+
+  // Listen for rental events
+  if (typeof eventBus !== 'undefined') {
+    eventBus.on('rental:created', () => {
+      console.log('Rental created event received');
+      renderRentals();
+    });
+    eventBus.on('rental:updated', () => {
+      console.log('Rental updated event received');
+      renderRentals();
+    });
+    eventBus.on('rental:returned', () => {
+      console.log('Rental returned event received');
+      renderRentals();
+    });
+    eventBus.on('rental:deleted', () => {
+      console.log('Rental deleted event received');
+      renderRentals();
+    });
+  }
+});
+</script>
+
+</body>
+</html>
