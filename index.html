@@ -44,6 +44,12 @@
 <script src="src/js/modules/inventory/location-actions.js"></script>
 <script src="src/js/modules/inventory/transfer-actions.js"></script>
 
+<!-- Sales Module -->
+<script src="src/js/modules/sales/line-items.js"></script>
+<script src="src/js/modules/sales/orders.js"></script>
+<script src="src/js/modules/sales/order-ui.js"></script>
+<script src="src/js/modules/sales/order-actions.js"></script>
+
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
   // CDN-backed loader (only used if local files are missing)
@@ -6492,6 +6498,175 @@ renderKits();
       <div class="btn-group">
         <button type="submit" class="btn" style="background: var(--accent)">Save Transfer</button>
         <button type="button" class="btn" onclick="TransferUI.closeTransferDialog()">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Order Dialog -->
+<div id="orderDialog" class="dialog" style="display: none;">
+  <div class="dialogContent" style="max-width: 1200px;">
+    <div class="dialog-header">
+      <h2 id="orderDialogTitle" class="dialog-title">New Order</h2>
+      <button class="btn" onclick="OrderUI.closeOrderDialog()" title="Close">✕</button>
+    </div>
+
+    <form id="orderForm" onsubmit="event.preventDefault(); ActionRegistry.execute('save-order');">
+      <!-- Hidden ID field -->
+      <input type="hidden" id="order_id">
+      <input type="hidden" id="order_orderNumber">
+
+      <!-- Customer Information -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Customer Information</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="order_customerName">Customer Name *</label>
+            <input type="text" id="order_customerName" class="field" placeholder="Customer name" required>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="order_customerId">Customer ID</label>
+            <input type="text" id="order_customerId" class="field" placeholder="Optional customer ID">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="order_shippingAddress">Shipping Address</label>
+          <textarea id="order_shippingAddress" class="field" rows="2" placeholder="Optional shipping address"></textarea>
+        </div>
+      </fieldset>
+
+      <!-- Order Information -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Order Information</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="order_orderDate">Order Date *</label>
+            <input type="date" id="order_orderDate" class="field" required>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="order_status">Status</label>
+            <select id="order_status" class="field">
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="fulfilled">Fulfilled</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="order_paymentMethod">Payment Method</label>
+            <select id="order_paymentMethod" class="field">
+              <option value="">-- Select --</option>
+              <option value="Cash">Cash</option>
+              <option value="Credit Card">Credit Card</option>
+              <option value="Debit Card">Debit Card</option>
+              <option value="Check">Check</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="order_paymentStatus">Payment Status</label>
+            <select id="order_paymentStatus" class="field">
+              <option value="unpaid">Unpaid</option>
+              <option value="partial">Partial</option>
+              <option value="paid">Paid</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="order_notes">Order Notes</label>
+          <textarea id="order_notes" class="field" rows="2" placeholder="Optional notes"></textarea>
+        </div>
+      </fieldset>
+
+      <!-- Line Items -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Line Items</legend>
+
+        <div style="margin-bottom: 1rem;">
+          <button type="button" id="btnAddLineItem" class="btn" style="background: var(--accent)">➕ Add Product</button>
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="table" style="min-width: 100%;">
+            <thead>
+              <tr>
+                <th style="min-width: 150px;">Product</th>
+                <th style="min-width: 80px;">SKU</th>
+                <th style="min-width: 60px;">Qty</th>
+                <th style="min-width: 80px;">Price</th>
+                <th style="min-width: 80px;">Subtotal</th>
+                <th style="min-width: 120px;">Discount</th>
+                <th style="min-width: 80px;">Tax</th>
+                <th style="min-width: 80px;">Total</th>
+                <th style="min-width: 50px;"></th>
+              </tr>
+            </thead>
+            <tbody id="orderLineItemsBody">
+              <tr><td colspan="9" style="text-align:center;padding:1rem;color:#999">No items added</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </fieldset>
+
+      <!-- Order Totals -->
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Order Totals & Discounts</legend>
+
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="order_discount">Order Discount</label>
+            <input type="number" id="order_discount" class="field" min="0" step="0.01" value="0">
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="order_discountType">Discount Type</label>
+            <select id="order_discountType" class="field">
+              <option value="percentage">Percentage (%)</option>
+              <option value="fixed">Fixed Amount ($)</option>
+            </select>
+          </div>
+
+          <div class="form-group" style="flex: 1">
+            <label for="order_taxRate">Tax Rate (%)</label>
+            <input type="number" id="order_taxRate" class="field" min="0" max="100" step="0.01" value="0">
+          </div>
+        </div>
+
+        <div style="background: var(--bg2); padding: 1rem; border-radius: 4px; margin-top: 1rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Subtotal:</span>
+            <strong id="orderSubtotal">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Discount:</span>
+            <strong id="orderDiscountAmount">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+            <span>Tax:</span>
+            <strong id="orderTaxAmount">$0.00</strong>
+          </div>
+          <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid var(--border); font-size: 1.2em;">
+            <span>Total:</span>
+            <strong id="orderTotal" style="color: var(--accent)">$0.00</strong>
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="btn-group">
+        <button type="submit" class="btn" style="background: var(--accent)">Save Order</button>
+        <button type="button" class="btn" onclick="OrderUI.closeOrderDialog()">Cancel</button>
       </div>
     </form>
   </div>

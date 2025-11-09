@@ -290,7 +290,8 @@ const STORAGE_KEYS = {
   CALENDAR_NOTES: 'inv.calendarNotes',
   PAY_PERIOD: 'inv.payPeriod',
   TRANSFERS: 'inv.transfers',
-  LOCATIONS: 'inv.locations'
+  LOCATIONS: 'inv.locations',
+  ORDERS: 'inv.orders'
 };
 
 // ============ Save All Data ============
@@ -331,6 +332,9 @@ function saveAll() {
     // Save inventory data
     if (window.transfers) saveTransfers(window.transfers);
     if (window.locations) saveLocations(window.locations);
+
+    // Save sales data
+    if (window.orders) saveOrders(window.orders);
 
     // Save calendar data
     if (window.calendarEvents) saveCalendarEvents(window.calendarEvents);
@@ -591,6 +595,22 @@ function saveLocations(locations) {
   LS.set(STORAGE_KEYS.LOCATIONS, locations);
 }
 
+/**
+ * Load sales orders from localStorage
+ * @returns {Array} Orders array
+ */
+function loadOrders() {
+  return LS.get(STORAGE_KEYS.ORDERS, []);
+}
+
+/**
+ * Save sales orders to localStorage
+ * @param {Array} orders - Orders to save
+ */
+function saveOrders(orders) {
+  LS.set(STORAGE_KEYS.ORDERS, orders);
+}
+
 // ============ Core Business Entity Functions ============
 
 /**
@@ -848,6 +868,7 @@ function backupPayload() {
     shipments: window.shipments || [],
     transfers: window.transfers || [],
     locations: window.locations || [],
+    orders: window.orders || [],
     calendarEvents: window.calendarEvents || [],
     calendarNotes: window.calendarNotes || {}
   };
@@ -907,6 +928,7 @@ function restoreFromObject(obj) {
     if (obj.shipments) window.shipments = obj.shipments;
     if (obj.transfers) window.transfers = obj.transfers;
     if (obj.locations) window.locations = obj.locations;
+    if (obj.orders) window.orders = obj.orders;
     if (obj.calendarEvents) window.calendarEvents = obj.calendarEvents;
     if (obj.calendarNotes) window.calendarNotes = obj.calendarNotes;
 
@@ -1021,6 +1043,8 @@ if (typeof window !== 'undefined') {
     saveTransfers,
     loadLocations,
     saveLocations,
+    loadOrders,
+    saveOrders,
     loadCalendarEvents,
     saveCalendarEvents,
     loadCalendarNotes,
