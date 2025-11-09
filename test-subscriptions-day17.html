@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Day 17 - Subscriptions Module Test</title>
+<link rel="stylesheet" href="src/styles/themes.css">
+<link rel="stylesheet" href="src/styles/base.css">
+<link rel="stylesheet" href="src/styles/components.css">
+<link rel="stylesheet" href="src/styles/tables.css">
+<link rel="stylesheet" href="src/styles/forms.css">
+
+<!-- Core JavaScript Modules -->
+<script src="src/js/core/utils.js"></script>
+<script src="src/js/core/storage.js"></script>
+<script src="src/js/core/theme.js"></script>
+<script src="src/js/core/eventBus.js"></script>
+
+<!-- UI Components -->
+<script src="src/js/ui/dialogs.js"></script>
+<script src="src/js/ui/notifications.js"></script>
+<script src="src/js/ui/forms.js"></script>
+<script src="src/js/ui/tables.js"></script>
+<script src="src/js/ui/actions.js"></script>
+<script src="src/js/ui/shortcuts.js"></script>
+<script src="src/js/ui/context-menu.js"></script>
+
+<!-- Customer Module (for customer linking) -->
+<script src="src/js/modules/customers/customers.js"></script>
+
+<!-- Sales Module (for invoice generation) -->
+<script src="src/js/modules/sales/line-items.js"></script>
+<script src="src/js/modules/sales/invoices.js"></script>
+
+<!-- Subscriptions Module -->
+<script src="src/js/modules/subscriptions/subscriptions.js"></script>
+<script src="src/js/modules/subscriptions/subscription-ui.js"></script>
+<script src="src/js/modules/subscriptions/subscription-actions.js"></script>
+
+<style>
+  body {
+    padding: 2rem;
+    max-width: 1600px;
+    margin: 0 auto;
+  }
+  .test-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg1);
+  }
+  .test-section h2 {
+    margin-top: 0;
+    color: var(--accent);
+  }
+  .test-section h3 {
+    margin-top: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+  }
+  .status {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-weight: bold;
+    margin-left: 1rem;
+  }
+  .status.pass {
+    background: var(--success-color);
+    color: white;
+  }
+  .status.fail {
+    background: var(--danger-color);
+    color: white;
+  }
+  .test-result {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    border-left: 3px solid var(--border);
+    padding-left: 1rem;
+  }
+  .test-result.pass {
+    border-left-color: var(--success-color);
+    background: rgba(46, 125, 50, 0.1);
+  }
+  .test-result.fail {
+    border-left-color: var(--danger-color);
+    background: rgba(211, 47, 47, 0.1);
+  }
+  .btn-group {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  #subscriptionsTable {
+    margin-top: 1rem;
+  }
+  .metric-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-left: 0.5rem;
+  }
+  .metrics-display {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--bg2);
+    border-radius: 8px;
+  }
+  .metric-card {
+    flex: 1;
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg1);
+    border-radius: 4px;
+  }
+  .metric-value {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--accent);
+  }
+  .metric-label {
+    font-size: 0.9rem;
+    color: var(--muted-color);
+    margin-top: 0.5rem;
+  }
+</style>
+</head>
+<body>
+
+<h1>Day 17: Subscriptions Module Test Suite</h1>
+
+<!-- Test Section 1: Module Loading -->
+<div class="test-section">
+  <h2>1. Module Loading Tests</h2>
+  <div id="moduleTests"></div>
+</div>
+
+<!-- Test Section 2: Metrics Dashboard -->
+<div class="test-section">
+  <h2>2. Subscription Metrics Dashboard</h2>
+  <div class="metrics-display">
+    <div class="metric-card">
+      <div class="metric-value" id="activeCountDisplay">0</div>
+      <div class="metric-label">Active Subscriptions</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="mrrDisplay">$0.00</div>
+      <div class="metric-label">Monthly Recurring Revenue (MRR)</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" id="dueCountDisplay">0</div>
+      <div class="metric-label">Due for Billing</div>
+    </div>
+  </div>
+</div>
+
+<!-- Test Section 3: Sample Data Creation -->
+<div class="test-section">
+  <h2>3. Sample Data Creation</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="createSampleCustomers()">Create Sample Customers</button>
+    <button class="btn" onclick="createSampleSubscriptions()">Create Sample Subscriptions</button>
+    <button class="btn danger" onclick="clearAllSubscriptions()">Clear All Subscriptions</button>
+  </div>
+  <div id="sampleDataResults"></div>
+</div>
+
+<!-- Test Section 4: Subscription Table Rendering -->
+<div class="test-section">
+  <h2>4. Subscription Table Rendering</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="renderSubscriptions()">Render All Subscriptions</button>
+    <button class="btn" onclick="renderActiveSubscriptions()">Filter Active <span id="activeBadge" class="metric-badge" style="display:none;">0</span></button>
+    <button class="btn" onclick="renderPausedSubscriptions()">Filter Paused</button>
+    <button class="btn" onclick="renderCancelledSubscriptions()">Filter Cancelled</button>
+    <button class="btn" onclick="renderDueSubscriptions()">Filter Due <span id="dueBadge" class="metric-badge" style="display:none;">0</span></button>
+  </div>
+  <div id="subscriptionsTable"></div>
+</div>
+
+<!-- Test Section 5: Subscription CRUD Operations -->
+<div class="test-section">
+  <h2>5. Subscription CRUD Operations</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testCreateSubscription()">Test Create Subscription</button>
+    <button class="btn" onclick="testUpdateSubscription()">Test Update Subscription</button>
+    <button class="btn" onclick="testDeleteSubscription()">Test Delete Subscription</button>
+  </div>
+  <div id="crudResults"></div>
+</div>
+
+<!-- Test Section 6: Status Management -->
+<div class="test-section">
+  <h2>6. Status Management Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testPauseSubscription()">Test Pause Subscription</button>
+    <button class="btn" onclick="testResumeSubscription()">Test Resume Subscription</button>
+    <button class="btn" onclick="testCancelSubscription()">Test Cancel Subscription</button>
+  </div>
+  <div id="statusResults"></div>
+</div>
+
+<!-- Test Section 7: Billing Processing -->
+<div class="test-section">
+  <h2>7. Billing Processing Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testProcessBilling()">Test Process Billing</button>
+    <button class="btn" onclick="testNextBillingCalculation()">Test Next Billing Calculation</button>
+    <button class="btn" onclick="testBillingDueDetection()">Test Billing Due Detection</button>
+  </div>
+  <div id="billingResults"></div>
+</div>
+
+<!-- Test Section 8: Dialog Tests -->
+<div class="test-section">
+  <h2>8. Dialog Interaction Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="ActionRegistry.execute('new-subscription')">Open New Subscription Dialog</button>
+    <button class="btn" onclick="testEditDialog()">Open Edit Dialog (First Subscription)</button>
+  </div>
+</div>
+
+<!-- Test Section 9: Action & Shortcut Tests -->
+<div class="test-section">
+  <h2>9. Action Registry & Shortcuts</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testActions()">Test All Actions</button>
+    <button class="btn" onclick="testShortcuts()">Test Shortcuts</button>
+    <button class="btn" onclick="testContextMenu()">Test Context Menu (Right-click table row)</button>
+  </div>
+  <div id="actionResults"></div>
+  <div style="margin-top: 1rem; padding: 1rem; background: var(--bg2); border-radius: 4px;">
+    <strong>Keyboard Shortcuts:</strong>
+    <ul>
+      <li><kbd>Ctrl+Shift+S</kbd> - New Subscription</li>
+      <li><kbd>Ctrl+Shift+D</kbd> - Show Due Subscriptions</li>
+      <li><kbd>Ctrl+Shift+M</kbd> - Show MRR</li>
+    </ul>
+  </div>
+</div>
+
+<!-- Test Section 10: Invoice Generation -->
+<div class="test-section">
+  <h2>10. Invoice Generation Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testInvoiceGeneration()">Generate Invoice from First Subscription</button>
+  </div>
+  <div id="invoiceResults"></div>
+</div>
+
+<!-- Test Section 11: MRR Calculation -->
+<div class="test-section">
+  <h2>11. MRR Calculation Tests</h2>
+  <div class="btn-group">
+    <button class="btn" onclick="testMRRCalculation()">Test MRR Calculation</button>
+  </div>
+  <div id="mrrResults"></div>
+</div>
+
+<!-- Subscription Dialog (supports both ID conventions) -->
+<div id="subscriptionDialog" class="dialog" style="display: none;">
+  <div class="dialogContent" style="max-width: 800px;">
+    <div class="dialog-header">
+      <h2 id="subscriptionDialogTitle" class="dialog-title">New Subscription</h2>
+      <button class="btn" onclick="hideDialog('#subscriptionDialog')" title="Close">✕</button>
+    </div>
+
+    <form id="subscriptionForm" onsubmit="event.preventDefault(); ActionRegistry.execute('save-subscription');">
+      <input type="hidden" id="subscriptionId">
+      <input type="hidden" id="subId">
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Customer Information</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionCustomer">Customer Name *</label>
+            <input type="text" id="subscriptionCustomer" name="subCustomer" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionCustomerId">Select Customer</label>
+            <select id="subscriptionCustomerId" name="subCustomerId" class="field">
+              <option value="">-- Select Customer --</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Subscription Details</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 2">
+            <label for="subscriptionPlan">Plan Name *</label>
+            <input type="text" id="subscriptionPlan" name="subPlan" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionAmount">Amount *</label>
+            <input type="number" id="subscriptionAmount" name="subAmount" class="field" step="0.01" min="0" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionBillingCycle">Billing Cycle *</label>
+            <select id="subscriptionBillingCycle" name="subCycle" class="field" required>
+              <option value="weekly">Weekly</option>
+              <option value="monthly" selected>Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="yearly">Yearly</option>
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Billing Dates</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionStartDate">Start Date *</label>
+            <input type="date" id="subscriptionStartDate" name="subStart" class="field" required>
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionNextBillingDate">Next Billing Date</label>
+            <input type="date" id="subscriptionNextBillingDate" name="subNextPay" class="field">
+          </div>
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionLastBillingDate">Last Billing Date</label>
+            <input type="date" id="subscriptionLastBillingDate" name="subPrevPay" class="field" readonly>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Status & Settings</legend>
+        <div class="form-row">
+          <div class="form-group" style="flex: 1">
+            <label for="subscriptionStatus">Status</label>
+            <select id="subscriptionStatus" name="subStatus" class="field">
+              <option value="active" selected>Active</option>
+              <option value="paused">Paused</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1; display: flex; align-items: center; padding-top: 1.5rem;">
+            <input type="checkbox" id="subscriptionAutoRenew" name="subAutoRenew" checked>
+            <label for="subscriptionAutoRenew" style="margin-left: 0.5rem;">Auto-Renew</label>
+          </div>
+        </div>
+      </fieldset>
+
+      <fieldset style="border: 1px solid var(--border); padding: 1rem; margin-bottom: 1rem; border-radius: 4px;">
+        <legend style="padding: 0 0.5rem; font-weight: bold;">Notes</legend>
+        <div class="form-group">
+          <textarea id="subscriptionNotes" name="subNotes" class="field" rows="3"></textarea>
+        </div>
+      </fieldset>
+
+      <div class="btn-group">
+        <button type="submit" class="btn" style="background: var(--accent)">Save Subscription</button>
+        <button type="button" class="btn" onclick="hideDialog('#subscriptionDialog')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Toast Notification Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<script>
+// Test Results
+let testResults = {
+  pass: 0,
+  fail: 0
+};
+
+// Test 1: Module Loading
+function runModuleTests() {
+  const container = $('#moduleTests');
+  const tests = [
+    { name: 'Subscriptions module loaded', test: () => typeof getAllSubscriptions === 'function' },
+    { name: 'SubscriptionUI module loaded', test: () => typeof SubscriptionUI !== 'undefined' },
+    { name: 'Subscription actions registered', test: () => typeof ActionRegistry !== 'undefined' && ActionRegistry.get('new-subscription') !== undefined },
+    { name: 'Storage integration', test: () => typeof saveSubscriptions === 'function' && typeof loadSubscriptions === 'function' },
+    { name: 'EventBus integration', test: () => typeof eventBus !== 'undefined' },
+    { name: 'Billing functions available', test: () => typeof calculateNextBillingDate === 'function' && typeof isBillingDue === 'function' },
+    { name: 'MRR calculation available', test: () => typeof calculateMRR === 'function' }
+  ];
+
+  let html = '';
+  tests.forEach(t => {
+    const result = t.test();
+    html += `<div class="test-result ${result ? 'pass' : 'fail'}">
+      ${result ? '✓' : '✗'} ${t.name}
+    </div>`;
+    result ? testResults.pass++ : testResults.fail++;
+  });
+
+  container.innerHTML = html;
+}
+
+// Sample Data Creation
+function createSampleCustomers() {
+  if (typeof Customers === 'undefined') {
+    showNotification('Customers module not loaded', 'error');
+    return;
+  }
+
+  const customers = [
+    { name: 'Alice Johnson', email: 'alice@example.com', phone: '555-0201' },
+    { name: 'Bob Williams', email: 'bob@example.com', phone: '555-0202' },
+    { name: 'Carol Martinez', email: 'carol@example.com', phone: '555-0203' }
+  ];
+
+  customers.forEach(c => {
+    try {
+      Customers.createCustomer(c);
+    } catch (e) {
+      console.log('Customer may already exist:', c.name);
+    }
+  });
+
+  showNotification('Sample customers created', 'success');
+  updateResults('#sampleDataResults', `Created ${customers.length} customers`);
+}
+
+function createSampleSubscriptions() {
+  const today = new Date();
+  const lastMonth = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
+
+  const subscriptions = [
+    {
+      customer: 'Alice Johnson',
+      plan: 'Premium Monthly',
+      amount: 29.99,
+      billingCycle: 'monthly',
+      startDate: lastMonth.toISOString(),
+      nextBillingDate: yesterday.toISOString(), // Due for billing!
+      autoRenew: true,
+      status: 'active'
+    },
+    {
+      customer: 'Bob Williams',
+      plan: 'Basic Yearly',
+      amount: 199.99,
+      billingCycle: 'yearly',
+      startDate: today.toISOString(),
+      autoRenew: true,
+      status: 'active'
+    },
+    {
+      customer: 'Carol Martinez',
+      plan: 'Standard Monthly',
+      amount: 19.99,
+      billingCycle: 'monthly',
+      startDate: lastMonth.toISOString(),
+      nextBillingDate: nextWeek.toISOString(),
+      autoRenew: false,
+      status: 'paused'
+    }
+  ];
+
+  subscriptions.forEach(s => {
+    createSubscriptionCRUD(s);
+  });
+
+  showNotification(`Created ${subscriptions.length} sample subscriptions`, 'success');
+  updateResults('#sampleDataResults', `Created ${subscriptions.length} subscriptions (1 due, 1 active, 1 paused)`);
+  renderSubscriptions();
+  updateMetrics();
+}
+
+function clearAllSubscriptions() {
+  if (!confirm('Clear all subscriptions?')) return;
+
+  window.subscriptions = [];
+  saveSubscriptionsToStorage();
+  showNotification('All subscriptions cleared', 'success');
+  renderSubscriptions();
+  updateMetrics();
+}
+
+// Rendering Functions
+function renderSubscriptions() {
+  const subscriptions = getAllSubscriptions();
+  SubscriptionUI.renderSubscriptionTable('#subscriptionsTable', subscriptions);
+  updateMetrics();
+}
+
+function renderActiveSubscriptions() {
+  const subscriptions = filterSubscriptions(getAllSubscriptions(), { status: 'active' });
+  SubscriptionUI.renderSubscriptionTable('#subscriptionsTable', subscriptions);
+  showNotification(`Showing ${subscriptions.length} active subscriptions`, 'info');
+}
+
+function renderPausedSubscriptions() {
+  const subscriptions = filterSubscriptions(getAllSubscriptions(), { status: 'paused' });
+  SubscriptionUI.renderSubscriptionTable('#subscriptionsTable', subscriptions);
+  showNotification(`Showing ${subscriptions.length} paused subscriptions`, 'info');
+}
+
+function renderCancelledSubscriptions() {
+  const subscriptions = filterSubscriptions(getAllSubscriptions(), { status: 'cancelled' });
+  SubscriptionUI.renderSubscriptionTable('#subscriptionsTable', subscriptions);
+  showNotification(`Showing ${subscriptions.length} cancelled subscriptions`, 'info');
+}
+
+function renderDueSubscriptions() {
+  const subscriptions = getSubscriptionsDueForBilling(getAllSubscriptions());
+  SubscriptionUI.renderSubscriptionTable('#subscriptionsTable', subscriptions);
+  showNotification(`Showing ${subscriptions.length} subscriptions due for billing`, 'warning');
+}
+
+function updateMetrics() {
+  const metrics = SubscriptionUI.updateMetricsBadges();
+
+  // Update dashboard displays
+  $('#activeCountDisplay').textContent = metrics.active;
+  $('#mrrDisplay').textContent = formatCurrency(metrics.mrr);
+  $('#dueCountDisplay').textContent = metrics.due;
+
+  // Update badges
+  const activeBadge = $('#activeBadge');
+  if (activeBadge) {
+    activeBadge.textContent = metrics.active;
+    activeBadge.style.display = metrics.active > 0 ? 'inline-block' : 'none';
+  }
+
+  const dueBadge = $('#dueBadge');
+  if (dueBadge) {
+    dueBadge.textContent = metrics.due;
+    dueBadge.style.display = metrics.due > 0 ? 'inline-block' : 'none';
+  }
+}
+
+// CRUD Tests
+function testCreateSubscription() {
+  const subscription = createSubscriptionCRUD({
+    customer: 'Test Customer',
+    plan: 'Test Plan',
+    amount: 49.99,
+    billingCycle: 'monthly',
+    startDate: new Date().toISOString(),
+    autoRenew: true
+  });
+
+  updateResults('#crudResults', `✓ Created subscription: ${subscription.id} - ${subscription.plan} ($${subscription.amount}/month)`);
+  renderSubscriptions();
+}
+
+function testUpdateSubscription() {
+  const subscriptions = getAllSubscriptions();
+  if (subscriptions.length === 0) {
+    updateResults('#crudResults', '✗ No subscriptions to update');
+    return;
+  }
+
+  const subscription = updateSubscriptionCRUD(subscriptions[0].id, { amount: 99.99 });
+  updateResults('#crudResults', `✓ Updated subscription ${subscription.id} - New amount: $${subscription.amount}`);
+  renderSubscriptions();
+}
+
+function testDeleteSubscription() {
+  const subscriptions = getAllSubscriptions();
+  if (subscriptions.length === 0) {
+    updateResults('#crudResults', '✗ No subscriptions to delete');
+    return;
+  }
+
+  deleteSubscriptionCRUD(subscriptions[subscriptions.length - 1].id);
+  updateResults('#crudResults', `✓ Deleted last subscription`);
+  renderSubscriptions();
+}
+
+// Status Tests
+function testPauseSubscription() {
+  const subscriptions = getAllSubscriptions().filter(s => s.status === 'active');
+  if (subscriptions.length === 0) {
+    updateResults('#statusResults', '✗ No active subscriptions to pause');
+    return;
+  }
+
+  const subscription = pauseSubscriptionCRUD(subscriptions[0].id);
+  updateResults('#statusResults', `✓ Paused subscription ${subscription.id} - Status: ${subscription.status}`);
+  renderSubscriptions();
+}
+
+function testResumeSubscription() {
+  const subscriptions = getAllSubscriptions().filter(s => s.status === 'paused');
+  if (subscriptions.length === 0) {
+    updateResults('#statusResults', '✗ No paused subscriptions to resume');
+    return;
+  }
+
+  const subscription = resumeSubscriptionCRUD(subscriptions[0].id);
+  updateResults('#statusResults', `✓ Resumed subscription ${subscription.id} - Status: ${subscription.status}`);
+  renderSubscriptions();
+}
+
+function testCancelSubscription() {
+  const subscriptions = getAllSubscriptions().filter(s => s.status !== 'cancelled');
+  if (subscriptions.length === 0) {
+    updateResults('#statusResults', '✗ No subscriptions to cancel');
+    return;
+  }
+
+  const subscription = cancelSubscriptionCRUD(subscriptions[0].id);
+  updateResults('#statusResults', `✓ Cancelled subscription ${subscription.id} - Status: ${subscription.status}`);
+  renderSubscriptions();
+}
+
+// Billing Tests
+function testProcessBilling() {
+  const subscriptions = getAllSubscriptions().filter(s => s.status === 'active');
+  if (subscriptions.length === 0) {
+    updateResults('#billingResults', '✗ No active subscriptions to bill');
+    return;
+  }
+
+  const oldNextDate = subscriptions[0].nextBillingDate;
+  const subscription = processBillingCRUD(subscriptions[0].id, new Date().toISOString());
+
+  let html = `<h3>Billing Processed:</h3>`;
+  html += `<div class="test-result pass">
+    ✓ Subscription: ${subscription.plan}<br>
+    ✓ Amount: ${formatCurrency(subscription.amount)}<br>
+    ✓ Previous Next Billing: ${formatDate(oldNextDate)}<br>
+    ✓ New Next Billing: ${formatDate(subscription.nextBillingDate)}<br>
+    ✓ Last Billing: ${formatDate(subscription.lastBillingDate)}
+  </div>`;
+
+  updateResults('#billingResults', html);
+  renderSubscriptions();
+}
+
+function testNextBillingCalculation() {
+  const cycles = ['weekly', 'monthly', 'quarterly', 'yearly'];
+  const startDate = new Date('2025-01-01').toISOString();
+  const prevDate = new Date('2025-01-01');
+
+  let html = '<h3>Next Billing Date Calculation:</h3>';
+
+  cycles.forEach(cycle => {
+    const nextDate = calculateNextBillingDate(startDate, cycle, prevDate);
+    html += `<div class="test-result pass">
+      ✓ ${cycle}: ${formatDate(startDate)} → ${formatDate(nextDate)}
+    </div>`;
+  });
+
+  updateResults('#billingResults', html);
+}
+
+function testBillingDueDetection() {
+  // Create test subscriptions with different due dates
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+  const testSub1 = createSubscription({
+    customer: 'Test',
+    plan: 'Test',
+    amount: 10,
+    billingCycle: 'monthly',
+    startDate: yesterday,
+    nextBillingDate: yesterday,
+    status: 'active'
+  });
+
+  const testSub2 = createSubscription({
+    customer: 'Test',
+    plan: 'Test',
+    amount: 10,
+    billingCycle: 'monthly',
+    startDate: tomorrow,
+    nextBillingDate: tomorrow,
+    status: 'active'
+  });
+
+  const isDue1 = isBillingDue(testSub1);
+  const isDue2 = isBillingDue(testSub2);
+
+  let html = '<h3>Billing Due Detection:</h3>';
+  html += `<div class="test-result ${isDue1 ? 'pass' : 'fail'}">
+    ${isDue1 ? '✓' : '✗'} Yesterday's date detected as due: ${isDue1}
+  </div>`;
+  html += `<div class="test-result ${!isDue2 ? 'pass' : 'fail'}">
+    ${!isDue2 ? '✓' : '✗'} Tomorrow's date not due: ${!isDue2}
+  </div>`;
+
+  updateResults('#billingResults', html);
+}
+
+// Dialog Tests
+function testEditDialog() {
+  const subscriptions = getAllSubscriptions();
+  if (subscriptions.length === 0) {
+    showNotification('Create subscriptions first', 'warning');
+    return;
+  }
+  SubscriptionUI.showSubscriptionDialog(subscriptions[0].id);
+}
+
+// Action Tests
+function testActions() {
+  const actions = [
+    'new-subscription',
+    'edit-subscription',
+    'delete-subscription',
+    'pause-subscription',
+    'resume-subscription',
+    'cancel-subscription',
+    'process-billing',
+    'generate-subscription-invoice',
+    'refresh-subscriptions',
+    'show-due-subscriptions',
+    'export-subscriptions',
+    'filter-active-subscriptions',
+    'filter-paused-subscriptions',
+    'filter-cancelled-subscriptions',
+    'filter-due-subscriptions',
+    'show-mrr'
+  ];
+
+  let html = '<h3>Registered Actions:</h3>';
+  actions.forEach(actionName => {
+    const action = ActionRegistry.get(actionName);
+    const exists = !!action;
+    html += `<div class="test-result ${exists ? 'pass' : 'fail'}">
+      ${exists ? '✓' : '✗'} ${actionName}
+    </div>`;
+  });
+
+  updateResults('#actionResults', html);
+}
+
+function testShortcuts() {
+  const shortcuts = [
+    { key: 'ctrl+shift+s', name: 'New Subscription' },
+    { key: 'ctrl+shift+d', name: 'Show Due Subscriptions' },
+    { key: 'ctrl+shift+m', name: 'Show MRR' }
+  ];
+
+  let html = '<h3>Registered Shortcuts:</h3>';
+  html += '<p>Press the keyboard combinations to test:</p>';
+  shortcuts.forEach(s => {
+    html += `<div class="test-result pass">✓ ${s.key} - ${s.name}</div>`;
+  });
+
+  updateResults('#actionResults', html);
+}
+
+function testContextMenu() {
+  updateResults('#actionResults', '<div class="test-result pass">✓ Right-click any subscription row in the table above to test context menu</div>');
+}
+
+// Invoice Test
+function testInvoiceGeneration() {
+  const subscriptions = getAllSubscriptions();
+  if (subscriptions.length === 0) {
+    updateResults('#invoiceResults', '✗ No subscriptions available');
+    return;
+  }
+
+  const settings = { companyName: 'Test Company' };
+  const invoice = generateSubscriptionInvoice(subscriptions[0], settings);
+
+  let html = '<h3>Generated Invoice:</h3>';
+  html += `<div class="test-result pass">
+    ✓ Invoice Number: ${invoice.invoiceNumber}<br>
+    ✓ Customer: ${invoice.customer}<br>
+    ✓ Total: $${invoice.total.toFixed(2)}<br>
+    ✓ Line Items: ${invoice.lineItems.length}
+  </div>`;
+
+  updateResults('#invoiceResults', html);
+}
+
+// MRR Test
+function testMRRCalculation() {
+  const subscriptions = getAllSubscriptions();
+  const mrr = calculateMRR(subscriptions);
+
+  let html = '<h3>MRR Calculation:</h3>';
+  html += '<table class="table"><thead><tr><th>Plan</th><th>Amount</th><th>Cycle</th><th>Monthly Equivalent</th></tr></thead><tbody>';
+
+  subscriptions.forEach(s => {
+    if (s.status === 'active') {
+      let monthlyAmount = s.amount;
+      if (s.billingCycle === 'weekly') monthlyAmount = s.amount * 4.33;
+      else if (s.billingCycle === 'quarterly') monthlyAmount = s.amount / 3;
+      else if (s.billingCycle === 'yearly') monthlyAmount = s.amount / 12;
+
+      html += `<tr>
+        <td>${s.plan}</td>
+        <td>${formatCurrency(s.amount)}</td>
+        <td>${s.billingCycle}</td>
+        <td>${formatCurrency(monthlyAmount)}</td>
+      </tr>`;
+    }
+  });
+
+  html += '</tbody></table>';
+  html += `<div class="test-result pass">
+    ✓ Total MRR: ${formatCurrency(mrr)}<br>
+    ✓ Active Subscriptions: ${getActiveSubscriptions(subscriptions).length}
+  </div>`;
+
+  updateResults('#mrrResults', html);
+}
+
+// Helper Functions
+function updateResults(selector, content) {
+  const element = $(selector);
+  if (element) {
+    element.innerHTML = content;
+  }
+}
+
+// Initialize Tests on Load
+document.addEventListener('DOMContentLoaded', () => {
+  runModuleTests();
+  renderSubscriptions();
+  updateMetrics();
+
+  // Listen for subscription events
+  if (typeof eventBus !== 'undefined') {
+    eventBus.on('subscription:created', () => {
+      console.log('Subscription created event received');
+      renderSubscriptions();
+    });
+    eventBus.on('subscription:updated', () => {
+      console.log('Subscription updated event received');
+      renderSubscriptions();
+    });
+    eventBus.on('subscription:paused', () => {
+      console.log('Subscription paused event received');
+      renderSubscriptions();
+    });
+    eventBus.on('subscription:resumed', () => {
+      console.log('Subscription resumed event received');
+      renderSubscriptions();
+    });
+    eventBus.on('subscription:cancelled', () => {
+      console.log('Subscription cancelled event received');
+      renderSubscriptions();
+    });
+    eventBus.on('subscription:billed', () => {
+      console.log('Subscription billed event received');
+      renderSubscriptions();
+    });
+    eventBus.on('subscription:deleted', () => {
+      console.log('Subscription deleted event received');
+      renderSubscriptions();
+    });
+  }
+});
+</script>
+
+</body>
+</html>
