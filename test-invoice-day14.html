@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Day 14 - Invoice & Receipt Test</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-card {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+    }
+    h2 {
+      color: #666;
+      border-bottom: 2px solid #ddd;
+      padding-bottom: 8px;
+    }
+    .btn {
+      padding: 10px 20px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      background: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn:hover {
+      background: #f0f0f0;
+    }
+    .btn-primary {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    .btn-primary:hover {
+      background: #0056b3;
+    }
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    pre {
+      background: #f4f4f4;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Day 14 - Invoice & Receipt System Test</h1>
+
+  <div class="test-card">
+    <h2>Module Loading Status</h2>
+    <div id="loadStatus"></div>
+  </div>
+
+  <div class="test-card">
+    <h2>Test Sample Invoice</h2>
+    <p>This sample invoice includes all features: discounts, shipping, tax, and coupons.</p>
+    <div>
+      <button class="btn btn-primary" onclick="testInvoice()">📄 Open Invoice</button>
+      <button class="btn btn-primary" onclick="testReceipt()">🧾 Open Receipt</button>
+    </div>
+  </div>
+
+  <div class="test-card">
+    <h2>Sample Invoice Data</h2>
+    <pre id="invoiceData"></pre>
+  </div>
+
+  <!-- Load the new modules -->
+  <script src="src/js/printing/invoice-builder.js"></script>
+  <script src="src/js/printing/receipt-builder.js"></script>
+
+  <script>
+    // Sample invoice data
+    const sampleInvoice = {
+      id: 'inv-001',
+      number: 'INV-20250108-00001',
+      date: new Date().toLocaleDateString(),
+      from: 'Your Company Name\n123 Business Street\nCity, State 12345\nPhone: (555) 123-4567\nEmail: info@company.com',
+      billTo: 'Acme Corporation\nJohn Doe\n456 Client Avenue\nClientville, ST 67890\nPhone: (555) 987-6543',
+      items: [
+        { name: 'Product A', sku: 'SKU-001', qty: 2, price: 49.99, total: 99.98 },
+        { name: 'Product B', sku: 'SKU-002', qty: 1, price: 149.99, total: 149.99 },
+        { name: 'Service C', sku: 'SRV-003', qty: 3, price: 25.00, total: 75.00 }
+      ],
+      subtotal: 324.97,
+      sellerDiscountPct: 10,
+      sellerDiscountFixed: 5,
+      sellerDiscountTotal: 37.50,
+      shipping: 15.00,
+      shipTaxable: true,
+      taxBase: 302.47,
+      taxRate: 0.0825,
+      tax: 24.95,
+      mfrCoupon: 10.00,
+      total: 332.42,
+      notes: 'Thank you for your business!\nPayment due within 30 days.',
+      footerNotes: 'If you have any questions about this invoice, please contact us.\nwww.yourcompany.com',
+      paid: false
+    };
+
+    // Sample settings
+    const sampleSettings = {
+      currency: 'USD',
+      companyName: 'Your Company Name',
+      companyAddress: '123 Business Street, City, State 12345',
+      companyPhone: '(555) 123-4567',
+      companyEmail: 'info@company.com',
+      receiptFooter: 'Thank you for your purchase!\nVisit us again soon.'
+    };
+
+    // Display invoice data
+    document.getElementById('invoiceData').textContent = JSON.stringify(sampleInvoice, null, 2);
+
+    // Check module loading
+    function checkModules() {
+      const status = document.getElementById('loadStatus');
+      const modules = [
+        { name: 'invoice-builder.js', functions: ['generateInvoiceHTML', 'openInvoicePrintWindow', 'printInvoice'] },
+        { name: 'receipt-builder.js', functions: ['generateReceiptHTML', 'openReceiptPrintWindow', 'printReceipt'] }
+      ];
+
+      let html = '';
+      let allLoaded = true;
+
+      modules.forEach(module => {
+        const loaded = module.functions.every(fn => typeof window[fn] === 'function');
+        allLoaded = allLoaded && loaded;
+
+        html += `<div class="status ${loaded ? 'success' : 'error'}">`;
+        html += `<strong>${module.name}:</strong> `;
+        html += loaded ? '✓ Loaded successfully' : '✗ Failed to load';
+        html += '<ul>';
+        module.functions.forEach(fn => {
+          const exists = typeof window[fn] === 'function';
+          html += `<li>${fn}: ${exists ? '✓' : '✗'}</li>`;
+        });
+        html += '</ul></div>';
+      });
+
+      if (allLoaded) {
+        html += '<div class="status success"><strong>All modules loaded successfully!</strong></div>';
+      } else {
+        html += '<div class="status error"><strong>Some modules failed to load. Check console for errors.</strong></div>';
+      }
+
+      status.innerHTML = html;
+    }
+
+    // Test invoice generation
+    function testInvoice() {
+      try {
+        if (typeof window.openInvoicePrintWindow === 'function') {
+          window.openInvoicePrintWindow(sampleInvoice, sampleSettings);
+        } else {
+          alert('Error: openInvoicePrintWindow function not found. Check if invoice-builder.js loaded correctly.');
+        }
+      } catch (error) {
+        console.error('Error opening invoice:', error);
+        alert('Error opening invoice: ' + error.message);
+      }
+    }
+
+    // Test receipt generation
+    function testReceipt() {
+      try {
+        if (typeof window.openReceiptPrintWindow === 'function') {
+          window.openReceiptPrintWindow(sampleInvoice, sampleSettings);
+        } else {
+          alert('Error: openReceiptPrintWindow function not found. Check if receipt-builder.js loaded correctly.');
+        }
+      } catch (error) {
+        console.error('Error opening receipt:', error);
+        alert('Error opening receipt: ' + error.message);
+      }
+    }
+
+    // Run checks on page load
+    window.addEventListener('DOMContentLoaded', checkModules);
+  </script>
+</body>
+</html>

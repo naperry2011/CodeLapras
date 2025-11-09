@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(ls -la \"C:\\Terry_webapp\\docs\"\" | grep \"DAY_ \")"
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
