@@ -291,7 +291,10 @@ const STORAGE_KEYS = {
   PAY_PERIOD: 'inv.payPeriod',
   TRANSFERS: 'inv.transfers',
   LOCATIONS: 'inv.locations',
-  ORDERS: 'inv.orders'
+  ORDERS: 'inv.orders',
+  CUSTOMERS: 'inv.customers',
+  CONTACTS: 'inv.contacts',
+  ACCOUNTS: 'inv.accounts'
 };
 
 // ============ Save All Data ============
@@ -335,6 +338,11 @@ function saveAll() {
 
     // Save sales data
     if (window.orders) saveOrders(window.orders);
+
+    // Save customer data
+    if (window.customers) saveCustomers(window.customers);
+    if (window.contacts) saveContacts(window.contacts);
+    if (window.accounts) saveAccounts(window.accounts);
 
     // Save calendar data
     if (window.calendarEvents) saveCalendarEvents(window.calendarEvents);
@@ -611,6 +619,54 @@ function saveOrders(orders) {
   LS.set(STORAGE_KEYS.ORDERS, orders);
 }
 
+/**
+ * Load customers from localStorage
+ * @returns {Array} Customers array
+ */
+function loadCustomers() {
+  return LS.get(STORAGE_KEYS.CUSTOMERS, []);
+}
+
+/**
+ * Save customers to localStorage
+ * @param {Array} customers - Customers to save
+ */
+function saveCustomers(customers) {
+  LS.set(STORAGE_KEYS.CUSTOMERS, customers);
+}
+
+/**
+ * Load contacts from localStorage
+ * @returns {Array} Contacts array
+ */
+function loadContacts() {
+  return LS.get(STORAGE_KEYS.CONTACTS, []);
+}
+
+/**
+ * Save contacts to localStorage
+ * @param {Array} contacts - Contacts to save
+ */
+function saveContacts(contacts) {
+  LS.set(STORAGE_KEYS.CONTACTS, contacts);
+}
+
+/**
+ * Load customer accounts from localStorage
+ * @returns {Array} Accounts array
+ */
+function loadAccounts() {
+  return LS.get(STORAGE_KEYS.ACCOUNTS, []);
+}
+
+/**
+ * Save customer accounts to localStorage
+ * @param {Array} accounts - Accounts to save
+ */
+function saveAccounts(accounts) {
+  LS.set(STORAGE_KEYS.ACCOUNTS, accounts);
+}
+
 // ============ Core Business Entity Functions ============
 
 /**
@@ -869,6 +925,9 @@ function backupPayload() {
     transfers: window.transfers || [],
     locations: window.locations || [],
     orders: window.orders || [],
+    customers: window.customers || [],
+    contacts: window.contacts || [],
+    accounts: window.accounts || [],
     calendarEvents: window.calendarEvents || [],
     calendarNotes: window.calendarNotes || {}
   };
@@ -929,6 +988,9 @@ function restoreFromObject(obj) {
     if (obj.transfers) window.transfers = obj.transfers;
     if (obj.locations) window.locations = obj.locations;
     if (obj.orders) window.orders = obj.orders;
+    if (obj.customers) window.customers = obj.customers;
+    if (obj.contacts) window.contacts = obj.contacts;
+    if (obj.accounts) window.accounts = obj.accounts;
     if (obj.calendarEvents) window.calendarEvents = obj.calendarEvents;
     if (obj.calendarNotes) window.calendarNotes = obj.calendarNotes;
 
@@ -1049,6 +1111,12 @@ if (typeof window !== 'undefined') {
     saveCalendarEvents,
     loadCalendarNotes,
     saveCalendarNotes,
+    loadCustomers,
+    saveCustomers,
+    loadContacts,
+    saveContacts,
+    loadAccounts,
+    saveAccounts,
 
     // Backup/Restore
     backupPayload,

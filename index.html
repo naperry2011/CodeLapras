@@ -56,6 +56,13 @@
 <script src="src/js/printing/invoice-builder.js"></script>
 <script src="src/js/printing/receipt-builder.js"></script>
 
+<!-- Customer Module -->
+<script src="src/js/modules/customers/customers.js"></script>
+<script src="src/js/modules/customers/contacts.js"></script>
+<script src="src/js/modules/customers/accounts.js"></script>
+<script src="src/js/modules/customers/customer-ui.js"></script>
+<script src="src/js/modules/customers/customer-actions.js"></script>
+
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
   // CDN-backed loader (only used if local files are missing)
@@ -2856,6 +2863,55 @@
     <div class="field inline" style="margin-top:8px">
       <button class="btn small accent" id="btnCalAddRow">Add Another Event</button>
     </div>
+  </div>
+</dialog>
+
+<!-- Customer Dialog -->
+<dialog id="customerDialog" class="dialog">
+  <div class="dialogContent">
+    <div class="dialogHeader">
+      <h2 id="customerDialogTitle">Add Customer</h2>
+      <button class="dialogClose" onclick="hideDialog(customerDialog)">×</button>
+    </div>
+    <form id="customerForm">
+      <fieldset>
+        <legend>Basic Information</legend>
+        <label class="field">
+          Name *
+          <input type="text" id="customer_name" required>
+        </label>
+        <label class="field">
+          Company
+          <input type="text" id="customer_company">
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Contact Information</legend>
+        <label class="field">
+          Email
+          <input type="email" id="customer_email">
+        </label>
+        <label class="field">
+          Phone
+          <input type="tel" id="customer_phone">
+        </label>
+        <label class="field">
+          Address
+          <textarea id="customer_address" rows="3"></textarea>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Notes</legend>
+        <textarea id="customer_notes" rows="4"></textarea>
+      </fieldset>
+
+      <div class="btn-group">
+        <button type="button" class="btn" onclick="hideDialog(customerDialog)">Cancel</button>
+        <button type="submit" class="btn primary">Save Customer</button>
+      </div>
+    </form>
   </div>
 </dialog>
 
