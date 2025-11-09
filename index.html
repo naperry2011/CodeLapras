@@ -86,6 +86,41 @@
 <script type="module" src="src/js/modules/kits/kit-ui.js"></script>
 <script type="module" src="src/js/modules/kits/kit-actions.js"></script>
 
+<!-- Settings Module -->
+<script src="src/js/modules/settings/company.js"></script>
+<script type="module" src="src/js/modules/settings/appearance.js"></script>
+<script type="module" src="src/js/modules/settings/export-import.js"></script>
+<script type="module" src="src/js/modules/settings/backup.js"></script>
+<script type="module" src="src/js/modules/settings/settings-ui.js"></script>
+<script type="module" src="src/js/modules/settings/settings-actions.js"></script>
+
+<!-- Initialize Settings Module -->
+<script type="module">
+  import * as SettingsUI from './src/js/modules/settings/settings-ui.js';
+  import * as SettingsActions from './src/js/modules/settings/settings-actions.js';
+  import * as Appearance from './src/js/modules/settings/appearance.js';
+  import * as Backup from './src/js/modules/settings/backup.js';
+
+  // Initialize on DOM load
+  window.addEventListener('DOMContentLoaded', () => {
+    console.log('[Settings] Initializing Settings Module...');
+
+    // Initialize UI layer
+    SettingsUI.initializeSettingsUI();
+
+    // Initialize actions and shortcuts
+    SettingsActions.initializeSettingsActions();
+
+    // Apply appearance settings
+    Appearance.applyAppearanceSettings();
+
+    // Initialize backup system
+    Backup.initializeBackupSystem();
+
+    console.log('[Settings] Settings Module initialized successfully');
+  });
+</script>
+
 <!-- XLSX (SheetJS) loader: CDN fallback used only if local files aren't found -->
 <script>
   // CDN-backed loader (only used if local files are missing)
